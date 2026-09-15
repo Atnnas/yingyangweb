@@ -167,168 +167,201 @@ export default function Header() {
           className="md-flex"
         >
           {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              {isAdmin && (
-                <Link
-                  href="/admin"
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.65rem',
+                  padding: '0.4rem 0.85rem 0.4rem 0.45rem',
+                  backgroundColor: '#191D28',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  borderRadius: '30px',
+                  color: '#F7F8FA',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                }}
+              >
+                <div
                   style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.45rem',
-                    padding: '0.45rem 0.85rem',
-                    backgroundColor: 'rgba(35, 52, 107, 0.45)',
-                    border: '1px solid rgba(140, 166, 248, 0.5)',
-                    borderRadius: '4px',
-                    color: '#8CA6F8',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                    letterSpacing: '0.04em',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <Shield size={14} /> Panel Admin
-                </Link>
-              )}
-
-              <div style={{ position: 'relative' }}>
-                <button
-                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  style={{
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '50%',
+                    backgroundColor: isAdmin ? '#8E2323' : '#23346B',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.65rem',
-                    padding: '0.45rem 0.85rem',
-                    backgroundColor: '#191D28',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: '30px',
-                    color: '#F7F8FA',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
+                    justifyContent: 'center',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                    border: '1.5px solid rgba(255, 255, 255, 0.25)',
                   }}
                 >
-                  <div
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      backgroundColor: isAdmin ? '#8E2323' : '#23346B',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                    }}
-                  >
-                    {user.name.charAt(0)}
-                  </div>
-                  <span style={{ fontWeight: 600 }}>{user.name.split(' ')[0]}</span>
-                  <span
-                    style={{
-                      fontSize: '0.65rem',
-                      padding: '0.15rem 0.45rem',
-                      backgroundColor: isAdmin ? 'rgba(147, 51, 234, 0.25)' : 'rgba(142, 35, 35, 0.3)',
-                      border: `1px solid ${isAdmin ? 'rgba(192, 132, 252, 0.4)' : 'rgba(184, 49, 49, 0.5)'}`,
-                      color: isAdmin ? '#C084FC' : '#FF9E9E',
-                      borderRadius: '4px',
-                      textTransform: 'uppercase',
-                      fontWeight: 700,
-                    }}
-                  >
-                    {isAdmin ? 'ADMIN' : user.kyuDan}
-                  </span>
-                </button>
+                  {user.avatar ? (
+                    <Image
+                      src={user.avatar}
+                      alt={user.name}
+                      width={30}
+                      height={30}
+                      unoptimized
+                      referrerPolicy="no-referrer"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    user.name.charAt(0).toUpperCase()
+                  )}
+                </div>
+                <span style={{ fontWeight: 600 }}>{user.name.split(' ')[0]}</span>
+                <span
+                  style={{
+                    fontSize: '0.65rem',
+                    padding: '0.15rem 0.45rem',
+                    backgroundColor: isAdmin ? 'rgba(147, 51, 234, 0.25)' : 'rgba(142, 35, 35, 0.3)',
+                    border: `1px solid ${isAdmin ? 'rgba(192, 132, 252, 0.4)' : 'rgba(184, 49, 49, 0.5)'}`,
+                    color: isAdmin ? '#C084FC' : '#FF9E9E',
+                    borderRadius: '4px',
+                    textTransform: 'uppercase',
+                    fontWeight: 700,
+                  }}
+                >
+                  {isAdmin ? 'ADMIN' : user.kyuDan}
+                </span>
+              </button>
 
-                {/* Menú Desplegable Usuario */}
-                {isUserDropdownOpen && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '110%',
-                      right: 0,
-                      width: '250px',
-                      backgroundColor: '#161922',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      borderRadius: '8px',
-                      padding: '0.85rem',
-                      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
-                      zIndex: 60,
-                    }}
-                  >
-                    <div style={{ paddingBottom: '0.65rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                      <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#F7F8FA' }}>{user.name}</p>
-                      <p style={{ fontSize: '0.75rem', color: '#9FA6B8' }}>{user.email}</p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.4rem', fontSize: '0.75rem', color: '#E2E8F0' }}>
-                        <Award size={13} color="#ECC94B" />
-                        <span>{user.belt} ({user.classesAttended} clases)</span>
-                      </div>
-
-                      {user.status === 'pending' && (
-                        <div
-                          style={{
-                            marginTop: '0.5rem',
-                            padding: '0.35rem 0.55rem',
-                            backgroundColor: 'rgba(234, 179, 8, 0.15)',
-                            border: '1px solid rgba(234, 179, 8, 0.3)',
-                            borderRadius: '4px',
-                            fontSize: '0.72rem',
-                            color: '#FACC15',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.35rem',
-                          }}
-                        >
-                          <Clock size={12} /> Cuenta en espera de aprobación
-                        </div>
-                      )}
-                    </div>
-
-                    {isAdmin && (
-                      <Link
-                        href="/admin"
-                        onClick={() => setIsUserDropdownOpen(false)}
+              {/* Menú Desplegable Usuario */}
+              {isUserDropdownOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '110%',
+                    right: 0,
+                    width: '260px',
+                    backgroundColor: '#161922',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '8px',
+                    padding: '0.85rem',
+                    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+                    zIndex: 60,
+                  }}
+                >
+                  <div style={{ paddingBottom: '0.75rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                      <div
                         style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          backgroundColor: isAdmin ? '#8E2323' : '#23346B',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.5rem',
-                          padding: '0.55rem 0.4rem',
-                          color: '#8CA6F8',
-                          textDecoration: 'none',
-                          fontSize: '0.82rem',
+                          justifyContent: 'center',
+                          fontSize: '0.9rem',
                           fontWeight: 700,
-                          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                          marginTop: '0.35rem',
+                          overflow: 'hidden',
+                          flexShrink: 0,
+                          border: '1.5px solid rgba(255, 255, 255, 0.2)',
                         }}
                       >
-                        <Shield size={14} /> Gestión de Usuarios (/admin)
-                      </Link>
-                    )}
+                        {user.avatar ? (
+                          <Image
+                            src={user.avatar}
+                            alt={user.name}
+                            width={40}
+                            height={40}
+                            unoptimized
+                            referrerPolicy="no-referrer"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          user.name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div style={{ overflow: 'hidden' }}>
+                        <p style={{ fontSize: '0.88rem', fontWeight: 700, color: '#F7F8FA', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {user.name}
+                        </p>
+                        <p style={{ fontSize: '0.72rem', color: '#9FA6B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
 
-                    <button
-                      onClick={() => {
-                        logout();
-                        setIsUserDropdownOpen(false);
-                      }}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', color: '#E2E8F0' }}>
+                      <Award size={13} color="#ECC94B" />
+                      <span>{user.belt} ({user.classesAttended} clases)</span>
+                    </div>
+
+                    {user.status === 'pending' && (
+                      <div
+                        style={{
+                          marginTop: '0.5rem',
+                          padding: '0.35rem 0.55rem',
+                          backgroundColor: 'rgba(234, 179, 8, 0.15)',
+                          border: '1px solid rgba(234, 179, 8, 0.3)',
+                          borderRadius: '4px',
+                          fontSize: '0.72rem',
+                          color: '#FACC15',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                        }}
+                      >
+                        <Clock size={12} /> Cuenta en espera de aprobación
+                      </div>
+                    )}
+                  </div>
+
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsUserDropdownOpen(false)}
                       style={{
-                        width: '100%',
-                        marginTop: '0.65rem',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.5rem 0.4rem',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: '#F87171',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem',
-                        borderRadius: '4px',
+                        gap: '0.6rem',
+                        padding: '0.65rem 0.6rem',
+                        marginTop: '0.5rem',
+                        backgroundColor: 'rgba(35, 52, 107, 0.3)',
+                        border: '1px solid rgba(140, 166, 248, 0.3)',
+                        borderRadius: '6px',
+                        color: '#8CA6F8',
+                        textDecoration: 'none',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        transition: 'background-color 0.2s ease',
                       }}
                     >
-                      <LogOut size={14} /> Cerrar Sesión
-                    </button>
-                  </div>
-                )}
-              </div>
+                      <Shield size={16} color="#8CA6F8" />
+                      <span>Panel de Administración (/admin)</span>
+                    </Link>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsUserDropdownOpen(false);
+                    }}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.65rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.5rem 0.4rem',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      color: '#F87171',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      borderRadius: '4px',
+                    }}
+                  >
+                    <LogOut size={14} /> Cerrar Sesión
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <button
@@ -434,8 +467,42 @@ export default function Header() {
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                 }}
               >
-                <p style={{ fontWeight: 700, color: '#F7F8FA' }}>{user.name}</p>
-                <p style={{ fontSize: '0.8rem', color: '#9FA6B8', margin: '0.2rem 0' }}>{user.belt} - {user.kyuDan}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
+                  <div
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '50%',
+                      backgroundColor: isAdmin ? '#8E2323' : '#23346B',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                      border: '1.5px solid rgba(255, 255, 255, 0.2)',
+                    }}
+                  >
+                    {user.avatar ? (
+                      <Image
+                        src={user.avatar}
+                        alt={user.name}
+                        width={38}
+                        height={38}
+                        unoptimized
+                        referrerPolicy="no-referrer"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      user.name.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div>
+                    <p style={{ fontWeight: 700, color: '#F7F8FA', lineHeight: 1.2 }}>{user.name}</p>
+                    <p style={{ fontSize: '0.78rem', color: '#9FA6B8' }}>{user.belt} - {user.kyuDan}</p>
+                  </div>
+                </div>
 
                 {user.status === 'pending' && (
                   <p style={{ fontSize: '0.72rem', color: '#FACC15', marginTop: '0.3rem' }}>
