@@ -5,14 +5,13 @@ import { getDatabase } from '@/lib/mongodb';
 // Detección y sanitización automática de URL para Vercel
 const getNextAuthUrl = () => {
   const rawUrl = process.env.NEXTAUTH_URL;
-  // Si no empieza con http/https o parece una clave secreta, descartarlo
-  if (rawUrl && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) && !rawUrl.includes('secret')) {
+  if (rawUrl && rawUrl.startsWith('http') && !rawUrl.includes('secret')) {
     return rawUrl;
   }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+    return 'https://yingyangweb.vercel.app';
   }
-  return 'https://yingyangweb.vercel.app';
+  return 'http://localhost:3000';
 };
 
 process.env.NEXTAUTH_URL = getNextAuthUrl();
