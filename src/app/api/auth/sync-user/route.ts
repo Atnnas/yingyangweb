@@ -14,22 +14,33 @@ export async function POST(request: NextRequest) {
     if (uri && !uri.includes('<TU_PASSWORD>')) {
       try {
         const db = await getDatabase();
-        const collection = db.collection('users');
+        const collection = db.collection('Users');
+        const email = user.email.toLowerCase().trim();
+        const isAdmin = email === 'david.artavia.rodriguez@gmail.com' || email === 'davidartaviarodriguez@gmail.com';
+
+        const updateSet: Record<string, unknown> = {
+          name: user.name,
+          avatar: user.avatar,
+          lastLogin: new Date(),
+        };
+
+        if (isAdmin) {
+          updateSet.role = 'administrator';
+          updateSet.status = 'active';
+        }
 
         // Upsert usuario por email o Google ID
         await collection.updateOne(
-          { email: user.email },
+          { email },
           {
-            $set: {
-              name: user.name,
-              avatar: user.avatar,
-              belt: user.belt,
-              kyuDan: user.kyuDan,
-              role: user.role || 'student',
-              lastLogin: new Date(),
-            },
+            $set: updateSet,
             $setOnInsert: {
               id: user.id,
+              email,
+              belt: isAdmin ? 'Cinturón Negro' : (user.belt || 'Cinturón Blanco'),
+              kyuDan: isAdmin ? '1° Dan' : (user.kyuDan || '9° Kyu'),
+              role: isAdmin ? 'administrator' : (user.role || 'viewer'),
+              status: isAdmin ? 'active' : (user.status || 'pending'),
               joinedDate: new Date(),
               classesAttended: 0,
             },
@@ -37,7 +48,7 @@ export async function POST(request: NextRequest) {
           { upsert: true }
         );
 
-        return NextResponse.json({ success: true, message: 'Usuario sincronizado con MongoDB' });
+        return NextResponse.json({ success: true, message: 'Usuario sincronizado con MongoDB Users' });
       } catch (dbErr) {
         console.error('Error sincronizando usuario en MongoDB:', dbErr);
       }

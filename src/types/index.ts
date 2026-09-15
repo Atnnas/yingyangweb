@@ -1,14 +1,22 @@
+export type UserRole = 'administrator' | 'editor' | 'viewer' | 'student';
+export type UserStatus = 'active' | 'pending' | 'blocked';
+
 export interface User {
   id: string;
+  _id?: string;
   name: string;
   email: string;
   avatar?: string;
   belt: string;
   beltColor: string;
   kyuDan: string;
-  role: 'student' | 'instructor' | 'admin';
+  role: UserRole;
+  status: UserStatus;
   joinedDate: string;
   classesAttended: number;
+  approvedAt?: string;
+  approvedBy?: string;
+  lastLogin?: string | Date;
 }
 
 export type SocialPlatform = 'instagram' | 'facebook' | 'youtube' | 'official';

@@ -24,17 +24,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Sincronizar usuario de NextAuth con nuestro estado de aplicación
   useEffect(() => {
     if (session?.user) {
+      const u = session.user as Record<string, unknown>;
       const authUser: User = {
-        id: (session.user as Record<string, unknown>).id as string || session.user.email || 'usr_google',
+        id: (u.id as string) || session.user.email || 'usr_google',
         name: session.user.name || 'Alumno',
         email: session.user.email || '',
         avatar: session.user.image || undefined,
-        belt: ((session.user as Record<string, unknown>).belt as string) || 'Cinturón Blanco',
-        beltColor: '#FFFFFF',
-        kyuDan: ((session.user as Record<string, unknown>).kyuDan as string) || '9° Kyu',
-        role: ((session.user as Record<string, unknown>).role as 'student' | 'instructor' | 'admin') || 'student',
+        belt: (u.belt as string) || 'Cinturón Blanco',
+        beltColor: (u.belt as string)?.toLowerCase().includes('negro') ? '#000000' : '#FFFFFF',
+        kyuDan: (u.kyuDan as string) || '9° Kyu',
+        role: (u.role as User['role']) || 'viewer',
+        status: (u.status as User['status']) || 'pending',
         joinedDate: 'Registrado',
-        classesAttended: ((session.user as Record<string, unknown>).classesAttended as number) || 0,
+        classesAttended: (u.classesAttended as number) || 0,
       };
       setUser(authUser);
     } else if (status === 'unauthenticated') {

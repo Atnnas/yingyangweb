@@ -16,6 +16,13 @@ const getNextAuthUrl = () => {
 
 process.env.NEXTAUTH_URL = getNextAuthUrl();
 
+// Verificar si el correo corresponde al Super Administrador del Dojo
+const isSuperAdminEmail = (email?: string | null) => {
+  if (!email) return false;
+  const normalized = email.toLowerCase().trim();
+  return normalized === 'david.artavia.rodriguez@gmail.com' || normalized === 'davidartaviarodriguez@gmail.com';
+};
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -28,31 +35,45 @@ export const authOptions: NextAuthOptions = {
       try {
         if (user.email) {
           const db = await getDatabase();
-          const usersCol = db.collection('users');
+          const usersCol = db.collection('Users');
+          const isAdmin = isSuperAdminEmail(user.email);
+
+          // Si es el super admin, forzar siempre rol administrator y status active
+          const updateFields: Record<string, unknown> = {
+            name: user.name,
+            avatar: user.image,
+            lastLogin: new Date(),
+          };
+
+          if (isAdmin) {
+            updateFields.role = 'administrator';
+            updateFields.status = 'active';
+            updateFields.approvedAt = new Date().toISOString();
+            updateFields.approvedBy = 'system_root';
+          }
+
           await usersCol.updateOne(
-            { email: user.email },
+            { email: user.email.toLowerCase().trim() },
             {
-              $set: {
-                name: user.name,
-                avatar: user.image,
-                lastLogin: new Date(),
-              },
+              $set: updateFields,
               $setOnInsert: {
                 googleId: user.id || account?.providerAccountId,
-                email: user.email,
-                belt: 'Cinturón Blanco',
-                beltColor: '#FFFFFF',
-                kyuDan: '9° Kyu',
-                role: 'student',
+                email: user.email.toLowerCase().trim(),
+                belt: isAdmin ? 'Cinturón Negro' : 'Cinturón Blanco',
+                beltColor: isAdmin ? '#000000' : '#FFFFFF',
+                kyuDan: isAdmin ? '1° Dan' : '9° Kyu',
+                role: isAdmin ? 'administrator' : 'viewer',
+                status: isAdmin ? 'active' : 'pending',
                 joinedDate: new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
                 classesAttended: 0,
+                createdAt: new Date(),
               },
             },
             { upsert: true }
           );
         }
       } catch (err) {
-        console.error('Error guardando usuario de Google en MongoDB:', err);
+        console.error('Error guardando usuario de Google en MongoDB Users:', err);
       }
       return true;
     },
@@ -60,16 +81,24 @@ export const authOptions: NextAuthOptions = {
       try {
         if (session.user?.email) {
           const db = await getDatabase();
-          const dbUser = await db.collection('users').findOne({ email: session.user.email });
+          const email = session.user.email.toLowerCase().trim();
+          const dbUser = await db.collection('Users').findOne({ email });
+          const isAdmin = isSuperAdminEmail(email);
+
           if (dbUser) {
-            (session.user as Record<string, unknown>).belt = dbUser.belt || 'Cinturón Blanco';
-            (session.user as Record<string, unknown>).kyuDan = dbUser.kyuDan || '9° Kyu';
-            (session.user as Record<string, unknown>).role = dbUser.role || 'student';
+            (session.user as Record<string, unknown>).id = dbUser._id.toString();
+            (session.user as Record<string, unknown>).belt = dbUser.belt || (isAdmin ? 'Cinturón Negro' : 'Cinturón Blanco');
+            (session.user as Record<string, unknown>).kyuDan = dbUser.kyuDan || (isAdmin ? '1° Dan' : '9° Kyu');
+            (session.user as Record<string, unknown>).role = isAdmin ? 'administrator' : (dbUser.role || 'viewer');
+            (session.user as Record<string, unknown>).status = isAdmin ? 'active' : (dbUser.status || 'pending');
             (session.user as Record<string, unknown>).classesAttended = dbUser.classesAttended || 0;
+          } else if (isAdmin) {
+            (session.user as Record<string, unknown>).role = 'administrator';
+            (session.user as Record<string, unknown>).status = 'active';
           }
         }
       } catch (err) {
-        console.error('Error enriqueciendo sesión con MongoDB:', err);
+        console.error('Error enriqueciendo sesión con MongoDB Users:', err);
       }
       return session;
     },
