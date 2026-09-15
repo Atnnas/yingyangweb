@@ -7,9 +7,15 @@ export interface User {
   name: string;
   email: string;
   avatar?: string;
-  belt: string;
-  beltColor: string;
-  kyuDan: string;
+  belt?: string;
+  beltColor?: string;
+  kyuDan: string; // Ej: '9° Kyu' o '1° Dan'
+  birthDate?: string; // Fecha de nacimiento YYYY-MM-DD
+  weight?: number; // Peso corporal en kilogramos (kg)
+  gender?: 'male' | 'female'; // Rama deportiva WKF (Masculino / Femenino)
+  age?: number; // Edad calculada
+  kataCategory?: string; // Categoría oficial WKF Kata
+  kumiteCategory?: string; // Categoría oficial WKF Kumite
   role: UserRole;
   status: UserStatus;
   joinedDate: string;

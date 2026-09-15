@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { calculateWKFCategories } from '@/lib/wkf-categories';
 
 const SUPER_ADMINS = [
   'david.artavia.rodriguez@gmail.com',
@@ -98,22 +99,38 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const users = rawUsers.map((u) => ({
-      id: u._id.toString(),
-      _id: u._id.toString(),
-      name: u.name || 'Sin nombre',
-      email: u.email,
-      avatar: u.avatar || null,
-      belt: u.belt || 'Cinturón Blanco',
-      kyuDan: u.kyuDan || '9° Kyu',
-      role: isSuperAdminEmail(u.email) ? 'administrator' : (u.role || 'viewer'),
-      status: isSuperAdminEmail(u.email) ? 'active' : (u.status || 'pending'),
-      joinedDate: u.joinedDate || 'Reciente',
-      classesAttended: u.classesAttended || 0,
-      approvedAt: u.approvedAt || null,
-      approvedBy: u.approvedBy || null,
-      lastLogin: u.lastLogin || null,
-    }));
+    const users = rawUsers.map((u) => {
+      const wkf = calculateWKFCategories({
+        birthDate: u.birthDate,
+        weight: u.weight,
+        gender: u.gender || 'male',
+        kyuDan: u.kyuDan || '9° Kyu',
+      });
+
+      return {
+        id: u._id.toString(),
+        _id: u._id.toString(),
+        name: u.name || 'Sin nombre',
+        email: u.email,
+        avatar: u.avatar || null,
+        belt: u.belt || wkf.beltName,
+        beltColor: u.beltColor || wkf.beltColor,
+        kyuDan: u.kyuDan || '9° Kyu',
+        birthDate: u.birthDate || '',
+        weight: u.weight !== undefined ? u.weight : null,
+        gender: u.gender || 'male',
+        age: wkf.age,
+        kataCategory: u.kataCategory || wkf.kataCategory,
+        kumiteCategory: u.kumiteCategory || wkf.kumiteCategory,
+        role: isSuperAdminEmail(u.email) ? 'administrator' : (u.role || 'viewer'),
+        status: isSuperAdminEmail(u.email) ? 'active' : (u.status || 'pending'),
+        joinedDate: u.joinedDate || 'Reciente',
+        classesAttended: u.classesAttended || 0,
+        approvedAt: u.approvedAt || null,
+        approvedBy: u.approvedBy || null,
+        lastLogin: u.lastLogin || null,
+      };
+    });
 
     return NextResponse.json({ success: true, users });
   } catch (err: unknown) {
@@ -122,7 +139,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: Crear o pre-aprobar un nuevo usuario manualmente
+// POST: Crear o pre-aprobar un nuevo estudiante / usuario manualmente
 export async function POST(request: NextRequest) {
   try {
     const auth = await verifyAdmin();
@@ -131,7 +148,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, name, role = 'viewer', status = 'active', belt = 'Cinturón Blanco', kyuDan = '9° Kyu' } = body;
+    const {
+      email,
+      name,
+      role = 'student',
+      status = 'active',
+      kyuDan = '9° Kyu',
+      birthDate = '',
+      weight = null,
+      gender = 'male',
+    } = body;
 
     if (!email) {
       return NextResponse.json({ error: 'El correo electrónico es obligatorio' }, { status: 400 });
@@ -149,13 +175,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const parsedWeight = weight !== null && weight !== undefined && weight !== '' ? Number(weight) : null;
+    const wkf = calculateWKFCategories({
+      birthDate,
+      weight: parsedWeight || undefined,
+      gender: gender || 'male',
+      kyuDan,
+    });
+
     const newUser = {
       email: normalizedEmail,
-      name: name || 'Usuario Invitado',
+      name: name || 'Estudiante',
       role: isSuperAdminEmail(normalizedEmail) ? 'administrator' : role,
       status: isSuperAdminEmail(normalizedEmail) ? 'active' : status,
-      belt,
-      kyuDan,
+      belt: wkf.beltName,
+      beltColor: wkf.beltColor,
+      kyuDan: kyuDan || '9° Kyu',
+      birthDate: birthDate || '',
+      weight: parsedWeight,
+      gender: gender || 'male',
+      age: wkf.age,
+      kataCategory: wkf.kataCategory,
+      kumiteCategory: wkf.kumiteCategory,
       classesAttended: 0,
       joinedDate: new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
       createdAt: new Date(),
@@ -168,7 +209,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       user: { ...newUser, id: result.insertedId.toString() },
-      message: 'Usuario registrado exitosamente',
+      message: 'Estudiante registrado exitosamente con categorías WKF calculadas',
     });
   } catch (err: unknown) {
     const error = err as Error;
@@ -176,7 +217,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH: Modificar rol, estado (aprobar/bloquear) o datos de un usuario
+// PATCH: Modificar rol, estado, grado o datos marciales de un usuario
 export async function PATCH(request: NextRequest) {
   try {
     const auth = await verifyAdmin();
@@ -185,7 +226,17 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, email, role, status, belt, kyuDan, classesAttended } = body;
+    const {
+      id,
+      email,
+      role,
+      status,
+      kyuDan,
+      birthDate,
+      weight,
+      gender,
+      classesAttended,
+    } = body;
 
     if (!id && !email) {
       return NextResponse.json({ error: 'Se requiere ID o email del usuario' }, { status: 400 });
@@ -219,15 +270,48 @@ export async function PATCH(request: NextRequest) {
         updateFields.approvedBy = auth.userEmail;
       }
     }
-    if (belt) updateFields.belt = belt;
-    if (kyuDan) updateFields.kyuDan = kyuDan;
     if (typeof classesAttended === 'number') updateFields.classesAttended = classesAttended;
+
+    // Calcular y actualizar datos marciales
+    const targetKyuDan = kyuDan !== undefined ? kyuDan : userToUpdate.kyuDan;
+    const targetBirthDate = birthDate !== undefined ? birthDate : userToUpdate.birthDate;
+    const targetWeight = weight !== undefined ? (weight !== '' && weight !== null ? Number(weight) : null) : userToUpdate.weight;
+    const targetGender = gender !== undefined ? gender : (userToUpdate.gender || 'male');
+
+    const wkf = calculateWKFCategories({
+      birthDate: targetBirthDate,
+      weight: targetWeight ? Number(targetWeight) : undefined,
+      gender: targetGender,
+      kyuDan: targetKyuDan,
+    });
+
+    if (kyuDan !== undefined) {
+      updateFields.kyuDan = kyuDan;
+      updateFields.belt = wkf.beltName;
+      updateFields.beltColor = wkf.beltColor;
+    }
+    if (birthDate !== undefined) {
+      updateFields.birthDate = birthDate;
+      updateFields.age = wkf.age;
+      updateFields.kataCategory = wkf.kataCategory;
+      updateFields.kumiteCategory = wkf.kumiteCategory;
+    }
+    if (weight !== undefined) {
+      updateFields.weight = targetWeight;
+      updateFields.kumiteCategory = wkf.kumiteCategory;
+    }
+    if (gender !== undefined) {
+      updateFields.gender = gender;
+      updateFields.kataCategory = wkf.kataCategory;
+      updateFields.kumiteCategory = wkf.kumiteCategory;
+    }
 
     await usersCol.updateOne(query, { $set: updateFields });
 
     return NextResponse.json({
       success: true,
-      message: 'Usuario actualizado correctamente',
+      message: 'Datos del estudiante y categorías WKF actualizados correctamente',
+      wkf,
     });
   } catch (err: unknown) {
     const error = err as Error;

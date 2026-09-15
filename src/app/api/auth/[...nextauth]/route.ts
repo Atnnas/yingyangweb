@@ -1,6 +1,7 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import { getDatabase } from '@/lib/mongodb';
+import { calculateWKFCategories } from '@/lib/wkf-categories';
 
 // Detección y sanitización automática de URL para Vercel
 const getNextAuthUrl = () => {
@@ -86,15 +87,30 @@ export const authOptions: NextAuthOptions = {
           const isAdmin = isSuperAdminEmail(email);
 
           if (dbUser) {
+            const wkf = calculateWKFCategories({
+              birthDate: dbUser.birthDate,
+              weight: dbUser.weight,
+              gender: dbUser.gender || 'male',
+              kyuDan: dbUser.kyuDan || (isAdmin ? '1° Dan' : '9° Kyu'),
+            });
+
             (session.user as Record<string, unknown>).id = dbUser._id.toString();
-            (session.user as Record<string, unknown>).belt = dbUser.belt || (isAdmin ? 'Cinturón Negro' : 'Cinturón Blanco');
+            (session.user as Record<string, unknown>).belt = wkf.beltName || dbUser.belt || (isAdmin ? 'Cinturón Negro' : 'Cinturón Blanco');
+            (session.user as Record<string, unknown>).beltColor = wkf.beltColor || dbUser.beltColor || '#FFFFFF';
             (session.user as Record<string, unknown>).kyuDan = dbUser.kyuDan || (isAdmin ? '1° Dan' : '9° Kyu');
+            (session.user as Record<string, unknown>).birthDate = dbUser.birthDate || '';
+            (session.user as Record<string, unknown>).weight = dbUser.weight !== undefined ? dbUser.weight : null;
+            (session.user as Record<string, unknown>).gender = dbUser.gender || 'male';
+            (session.user as Record<string, unknown>).age = wkf.age;
+            (session.user as Record<string, unknown>).kataCategory = dbUser.kataCategory || wkf.kataCategory;
+            (session.user as Record<string, unknown>).kumiteCategory = dbUser.kumiteCategory || wkf.kumiteCategory;
             (session.user as Record<string, unknown>).role = isAdmin ? 'administrator' : (dbUser.role || 'viewer');
             (session.user as Record<string, unknown>).status = isAdmin ? 'active' : (dbUser.status || 'pending');
             (session.user as Record<string, unknown>).classesAttended = dbUser.classesAttended || 0;
           } else if (isAdmin) {
             (session.user as Record<string, unknown>).role = 'administrator';
             (session.user as Record<string, unknown>).status = 'active';
+            (session.user as Record<string, unknown>).kyuDan = '1° Dan';
           }
         }
       } catch (err) {

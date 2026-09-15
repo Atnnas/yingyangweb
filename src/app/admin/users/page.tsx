@@ -17,7 +17,18 @@ import {
   Trash2,
   X,
   UserCheck,
+  Edit2,
+  Scale,
+  Calendar,
+  Sparkles,
 } from 'lucide-react';
+import {
+  calculateWKFCategories,
+  calculateAge,
+  KYU_RANKS,
+  DAN_RANKS,
+  deriveBeltFromKyuDan,
+} from '@/lib/wkf-categories';
 
 export default function AdminUsersPage() {
   const { user } = useAuth();
@@ -33,15 +44,35 @@ export default function AdminUsersPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [newName, setNewName] = useState('');
-  const [newRole, setNewRole] = useState<UserRole>('viewer');
+  const [newRole, setNewRole] = useState<UserRole>('student');
   const [newStatus, setNewStatus] = useState<UserStatus>('active');
-  const [newBelt, setNewBelt] = useState('Cinturón Blanco');
+  const [newRankType, setNewRankType] = useState<'kyu' | 'dan'>('kyu');
   const [newKyuDan, setNewKyuDan] = useState('9° Kyu');
+  const [newBirthDate, setNewBirthDate] = useState('');
+  const [newWeight, setNewWeight] = useState('');
+  const [newGender, setNewGender] = useState<'male' | 'female'>('male');
+
+  // Modal para editar usuario
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editRole, setEditRole] = useState<UserRole>('student');
+  const [editStatus, setEditStatus] = useState<UserStatus>('active');
+  const [editRankType, setEditRankType] = useState<'kyu' | 'dan'>('kyu');
+  const [editKyuDan, setEditKyuDan] = useState('9° Kyu');
+  const [editBirthDate, setEditBirthDate] = useState('');
+  const [editWeight, setEditWeight] = useState('');
+  const [editGender, setEditGender] = useState<'male' | 'female'>('male');
+
   const [submitting, setSubmitting] = useState(false);
   const [actionMessage, setActionMessage] = useState<{
     type: 'success' | 'error';
     text: string;
   } | null>(null);
+
+  const isSuperAdmin =
+    user?.email?.toLowerCase().includes('david.artavia.rodriguez@gmail.com') ||
+    user?.email?.toLowerCase().includes('davidartaviarodriguez@gmail.com');
 
   // Cargar usuarios desde MongoDB
   const fetchUsers = useCallback(async () => {
@@ -62,12 +93,12 @@ export default function AdminUsersPage() {
   }, []);
 
   useEffect(() => {
-    if (user && user.role === 'administrator') {
+    if (user && ((user.role === 'administrator' && user.status === 'active') || isSuperAdmin)) {
       fetchUsers();
     }
-  }, [user, fetchUsers]);
+  }, [user, fetchUsers, isSuperAdmin]);
 
-  // Actualizar rol o estado de un usuario
+  // Actualizar rol o estado rápido de un usuario
   const handleUpdateUser = async (
     id: string,
     email: string,
@@ -83,7 +114,7 @@ export default function AdminUsersPage() {
       if (res.ok) {
         setActionMessage({
           type: 'success',
-          text: data.message || 'Usuario actualizado',
+          text: data.message || 'Usuario actualizado correctamente',
         });
         fetchUsers();
       } else {
@@ -99,7 +130,7 @@ export default function AdminUsersPage() {
     setTimeout(() => setActionMessage(null), 4000);
   };
 
-  // Eliminar usuario
+  // Eliminar usuario permanentemente
   const handleDeleteUser = async (id: string, email: string, name: string) => {
     if (
       !confirm(
@@ -136,10 +167,13 @@ export default function AdminUsersPage() {
     setTimeout(() => setActionMessage(null), 4000);
   };
 
-  // Crear usuario manualmente
+  // Crear usuario manualmente con Kyu / Dan y datos WKF
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEmail.trim()) return;
+    if (!newEmail.trim()) {
+      setActionMessage({ type: 'error', text: 'Por favor ingresa un correo electrónico' });
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -148,22 +182,29 @@ export default function AdminUsersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: newEmail.trim(),
-          name: newName.trim() || 'Nuevo Usuario',
+          name: newName.trim() || 'Estudiante',
           role: newRole,
           status: newStatus,
-          belt: newBelt,
           kyuDan: newKyuDan,
+          birthDate: newBirthDate,
+          weight: newWeight ? Number(newWeight) : null,
+          gender: newGender,
         }),
       });
       const data = await res.json();
       if (res.ok) {
         setActionMessage({
           type: 'success',
-          text: 'Usuario creado y pre-aprobado exitosamente',
+          text: 'Estudiante registrado con categorías WKF calculadas',
         });
         setIsAddModalOpen(false);
         setNewEmail('');
         setNewName('');
+        setNewBirthDate('');
+        setNewWeight('');
+        setNewKyuDan('9° Kyu');
+        setNewRankType('kyu');
+        setNewGender('male');
         fetchUsers();
       } else {
         setActionMessage({
@@ -174,6 +215,65 @@ export default function AdminUsersPage() {
     } catch (err) {
       console.error('Error al crear usuario:', err);
       setActionMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setSubmitting(false);
+      setTimeout(() => setActionMessage(null), 4000);
+    }
+  };
+
+  // Abrir modal de edición
+  const openEditModal = (u: User) => {
+    setEditingUser(u);
+    setEditName(u.name || '');
+    setEditRole(u.role || 'student');
+    setEditStatus(u.status || 'active');
+    const isDan = u.kyuDan?.toLowerCase().includes('dan');
+    setEditRankType(isDan ? 'dan' : 'kyu');
+    setEditKyuDan(u.kyuDan || (isDan ? '1° Dan' : '9° Kyu'));
+    setEditBirthDate(u.birthDate || '');
+    setEditWeight(u.weight !== undefined && u.weight !== null ? String(u.weight) : '');
+    setEditGender(u.gender || 'male');
+    setIsEditModalOpen(true);
+  };
+
+  // Guardar edición de usuario
+  const handleSaveEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingUser.id || editingUser._id,
+          email: editingUser.email,
+          name: editName.trim(),
+          role: editRole,
+          status: editStatus,
+          kyuDan: editKyuDan,
+          birthDate: editBirthDate,
+          weight: editWeight ? Number(editWeight) : null,
+          gender: editGender,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setActionMessage({
+          type: 'success',
+          text: 'Ficha marcial y categorías WKF actualizadas correctamente',
+        });
+        setIsEditModalOpen(false);
+        fetchUsers();
+      } else {
+        setActionMessage({
+          type: 'error',
+          text: data.error || 'Error al actualizar estudiante',
+        });
+      }
+    } catch (err) {
+      console.error('Error al actualizar estudiante:', err);
+      setActionMessage({ type: 'error', text: 'Error de red' });
     } finally {
       setSubmitting(false);
       setTimeout(() => setActionMessage(null), 4000);
@@ -196,6 +296,22 @@ export default function AdminUsersPage() {
   const activeStudentsCount = users.filter(
     (u) => u.status === 'active' && u.role !== 'administrator'
   ).length;
+
+  // Cálculo en vivo para el modal de creación
+  const addWkfPreview = calculateWKFCategories({
+    birthDate: newBirthDate,
+    weight: newWeight ? Number(newWeight) : undefined,
+    gender: newGender,
+    kyuDan: newKyuDan,
+  });
+
+  // Cálculo en vivo para el modal de edición
+  const editWkfPreview = calculateWKFCategories({
+    birthDate: editBirthDate,
+    weight: editWeight ? Number(editWeight) : undefined,
+    gender: editGender,
+    kyuDan: editKyuDan,
+  });
 
   return (
     <div>
@@ -258,92 +374,91 @@ export default function AdminUsersPage() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.35rem',
-                padding: '0.2rem 0.6rem',
-                backgroundColor: 'rgba(35, 52, 107, 0.3)',
-                border: '1px solid rgba(140, 166, 248, 0.4)',
+                padding: '0.25rem 0.65rem',
                 borderRadius: '20px',
-                color: '#8CA6F8',
-                fontSize: '0.75rem',
+                fontSize: '0.72rem',
                 fontWeight: 700,
-                letterSpacing: '0.05em',
+                letterSpacing: '0.12em',
                 textTransform: 'uppercase',
+                backgroundColor: 'rgba(35, 52, 107, 0.4)',
+                border: '1px solid rgba(140, 166, 248, 0.3)',
+                color: '#8CA6F8',
               }}
             >
-              <Users size={14} /> Módulo de Usuarios
-            </span>
-            <span style={{ fontSize: '0.8rem', color: '#9FA6B8' }}>
-              Colección: <strong>Users</strong>
+              <Shield size={12} /> Gestión del Dojo & WKF
             </span>
           </div>
-
           <h1
             style={{
-              fontSize: '2rem',
+              fontSize: 'clamp(1.75rem, 3vw, 2.25rem)',
               fontWeight: 900,
+              letterSpacing: '-0.02em',
               color: '#F7F8FA',
-              lineHeight: 1.15,
+              margin: 0,
             }}
           >
-            Gestión de Usuarios & Permisos
+            Registro de Estudiantes & Categorías WKF
           </h1>
           <p
             style={{
               color: '#9FA6B8',
-              fontSize: '0.92rem',
-              marginTop: '0.35rem',
+              fontSize: '0.95rem',
+              marginTop: '0.4rem',
+              marginBottom: 0,
             }}
           >
-            Super-Admin: <strong style={{ color: '#F7F8FA' }}>{user?.name}</strong>{' '}
-            ({user?.email})
+            Administra grados Kyu (10 a 1) y Dan (1 a 10). Las categorías oficiales de Kata y divisiones de peso de Kumite WKF se calculan automáticamente según fecha de nacimiento y peso.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
             onClick={fetchUsers}
             disabled={loadingUsers}
             style={{
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: '0.5rem',
-              padding: '0.65rem 1rem',
+              padding: '0.75rem 1rem',
               backgroundColor: '#161922',
               border: '1px solid rgba(255, 255, 255, 0.12)',
-              borderRadius: '6px',
+              borderRadius: '8px',
               color: '#F7F8FA',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
+              cursor: loadingUsers ? 'not-allowed' : 'pointer',
+              fontSize: '0.88rem',
               fontWeight: 600,
+              transition: 'background-color 0.2s ease',
             }}
           >
             <RefreshCw
               size={15}
               className={loadingUsers ? 'spin-animation' : ''}
             />
-            Actualizar
+            <span>Refrescar</span>
           </button>
 
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="btn-martial-primary"
             style={{
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: '0.5rem',
-              padding: '0.65rem 1.25rem',
-              fontSize: '0.85rem',
+              padding: '0.75rem 1.25rem',
+              fontSize: '0.88rem',
             }}
           >
-            <UserPlus size={16} /> Agregar Usuario
+            <UserPlus size={16} />
+            <span>Registrar Estudiante</span>
           </button>
         </div>
       </div>
 
-      {/* Métricas / KPIs */}
+      {/* Tarjetas de Métricas */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: '1.25rem',
           marginBottom: '2rem',
         }}
@@ -359,35 +474,23 @@ export default function AdminUsersPage() {
         >
           <div
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(35, 52, 107, 0.25)',
+              width: '46px',
+              height: '46px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(35, 52, 107, 0.4)',
+              border: '1px solid rgba(140, 166, 248, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <UserCheck size={22} color="#8CA6F8" />
+            <Users size={22} color="#8CA6F8" />
           </div>
           <div>
-            <p
-              style={{
-                fontSize: '0.75rem',
-                color: '#9FA6B8',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-              }}
-            >
+            <span style={{ fontSize: '0.78rem', color: '#9FA6B8', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
               Total Usuarios
-            </p>
-            <p
-              style={{
-                fontSize: '1.5rem',
-                fontWeight: 900,
-                color: '#F7F8FA',
-              }}
-            >
+            </span>
+            <p style={{ fontSize: '1.6rem', fontWeight: 900, color: '#F7F8FA', margin: '0.2rem 0 0' }}>
               {totalUsers}
             </p>
           </div>
@@ -400,47 +503,60 @@ export default function AdminUsersPage() {
             display: 'flex',
             alignItems: 'center',
             gap: '1rem',
-            border:
-              pendingUsersCount > 0
-                ? '1px solid rgba(234, 179, 8, 0.4)'
-                : undefined,
-            backgroundColor:
-              pendingUsersCount > 0
-                ? 'rgba(234, 179, 8, 0.05)'
-                : undefined,
           }}
         >
           <div
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(234, 179, 8, 0.15)',
+              width: '46px',
+              height: '46px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(34, 197, 94, 0.15)',
+              border: '1px solid rgba(34, 197, 94, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Clock size={22} color="#EAB308" />
+            <UserCheck size={22} color="#4ADE80" />
           </div>
           <div>
-            <p
-              style={{
-                fontSize: '0.75rem',
-                color: '#EAB308',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-              }}
-            >
-              Pendientes
+            <span style={{ fontSize: '0.78rem', color: '#9FA6B8', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+              Estudiantes Activos
+            </span>
+            <p style={{ fontSize: '1.6rem', fontWeight: 900, color: '#4ADE80', margin: '0.2rem 0 0' }}>
+              {activeStudentsCount}
             </p>
-            <p
-              style={{
-                fontSize: '1.5rem',
-                fontWeight: 900,
-                color: '#F7F8FA',
-              }}
-            >
+          </div>
+        </div>
+
+        <div
+          className="card-sumi"
+          style={{
+            padding: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+          }}
+        >
+          <div
+            style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(234, 179, 8, 0.15)',
+              border: '1px solid rgba(234, 179, 8, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Clock size={22} color="#FACC15" />
+          </div>
+          <div>
+            <span style={{ fontSize: '0.78rem', color: '#9FA6B8', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+              En Espera de Aprobación
+            </span>
+            <p style={{ fontSize: '1.6rem', fontWeight: 900, color: '#FACC15', margin: '0.2rem 0 0' }}>
               {pendingUsersCount}
             </p>
           </div>
@@ -457,10 +573,11 @@ export default function AdminUsersPage() {
         >
           <div
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(147, 51, 234, 0.2)',
+              width: '46px',
+              height: '46px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(147, 51, 234, 0.15)',
+              border: '1px solid rgba(192, 132, 252, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -469,79 +586,21 @@ export default function AdminUsersPage() {
             <Shield size={22} color="#C084FC" />
           </div>
           <div>
-            <p
-              style={{
-                fontSize: '0.75rem',
-                color: '#9FA6B8',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-              }}
-            >
+            <span style={{ fontSize: '0.78rem', color: '#9FA6B8', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
               Administradores
-            </p>
-            <p
-              style={{
-                fontSize: '1.5rem',
-                fontWeight: 900,
-                color: '#F7F8FA',
-              }}
-            >
+            </span>
+            <p style={{ fontSize: '1.6rem', fontWeight: 900, color: '#C084FC', margin: '0.2rem 0 0' }}>
               {adminUsersCount}
-            </p>
-          </div>
-        </div>
-
-        <div
-          className="card-sumi"
-          style={{
-            padding: '1.25rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-          }}
-        >
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(142, 35, 35, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Award size={22} color="#E55353" />
-          </div>
-          <div>
-            <p
-              style={{
-                fontSize: '0.75rem',
-                color: '#9FA6B8',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-              }}
-            >
-              Alumnos Activos
-            </p>
-            <p
-              style={{
-                fontSize: '1.5rem',
-                fontWeight: 900,
-                color: '#F7F8FA',
-              }}
-            >
-              {activeStudentsCount}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Barra de Filtros */}
+      {/* Barra de Búsqueda y Filtros */}
       <div
         className="card-sumi"
         style={{
-          padding: '1rem 1.25rem',
+          padding: '1.25rem',
           marginBottom: '1.5rem',
           display: 'flex',
           alignItems: 'center',
@@ -550,25 +609,48 @@ export default function AdminUsersPage() {
           gap: '1rem',
         }}
       >
-        <div style={{ position: 'relative', flex: '1', minWidth: '220px' }}>
+        <div
+          style={{
+            position: 'relative',
+            flex: '1',
+            minWidth: '240px',
+            maxWidth: '420px',
+          }}
+        >
           <Search
             size={16}
+            color="#9FA6B8"
             style={{
               position: 'absolute',
-              left: '12px',
+              left: '0.85rem',
               top: '50%',
               transform: 'translateY(-50%)',
-              color: '#9FA6B8',
             }}
           />
           <input
             type="text"
-            placeholder="Buscar alumno o correo..."
+            placeholder="Buscar por nombre o correo..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
               width: '100%',
-              padding: '0.6rem 1rem 0.6rem 2.4rem',
+              padding: '0.65rem 0.85rem 0.65rem 2.4rem',
+              backgroundColor: '#12151E',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: '6px',
+              color: '#F7F8FA',
+              fontSize: '0.88rem',
+              outline: 'none',
+            }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as 'all' | UserStatus)}
+            style={{
+              padding: '0.65rem 0.85rem',
               backgroundColor: '#12151E',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               borderRadius: '6px',
@@ -576,87 +658,37 @@ export default function AdminUsersPage() {
               fontSize: '0.85rem',
               outline: 'none',
             }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <span
-            style={{
-              fontSize: '0.8rem',
-              color: '#9FA6B8',
-              marginRight: '0.2rem',
-            }}
           >
-            Estado:
-          </span>
-          {(['all', 'pending', 'active', 'blocked'] as const).map((st) => (
-            <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              style={{
-                padding: '0.4rem 0.75rem',
-                borderRadius: '4px',
-                border: '1px solid',
-                borderColor:
-                  statusFilter === st
-                    ? '#8CA6F8'
-                    : 'rgba(255, 255, 255, 0.08)',
-                backgroundColor:
-                  statusFilter === st ? 'rgba(35, 52, 107, 0.35)' : '#161922',
-                color: statusFilter === st ? '#F7F8FA' : '#9FA6B8',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              {st === 'all'
-                ? 'Todos'
-                : st === 'pending'
-                ? 'Pendientes'
-                : st === 'active'
-                ? 'Activos'
-                : 'Bloqueados'}
-            </button>
-          ))}
-        </div>
+            <option value="all">Todos los Estados</option>
+            <option value="active">Solo Activos</option>
+            <option value="pending">Solo Pendientes</option>
+            <option value="blocked">Solo Bloqueados</option>
+          </select>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <span
-            style={{
-              fontSize: '0.8rem',
-              color: '#9FA6B8',
-              marginRight: '0.2rem',
-            }}
-          >
-            Rol:
-          </span>
           <select
             value={roleFilter}
-            onChange={(e) =>
-              setRoleFilter(e.target.value as 'all' | UserRole)
-            }
+            onChange={(e) => setRoleFilter(e.target.value as 'all' | UserRole)}
             style={{
-              padding: '0.45rem 0.8rem',
+              padding: '0.65rem 0.85rem',
               backgroundColor: '#12151E',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               borderRadius: '6px',
               color: '#F7F8FA',
-              fontSize: '0.82rem',
+              fontSize: '0.85rem',
               outline: 'none',
-              cursor: 'pointer',
             }}
           >
-            <option value="all">Todos los roles</option>
-            <option value="administrator">administrator</option>
-            <option value="editor">editor</option>
-            <option value="viewer">viewer</option>
-            <option value="student">student</option>
+            <option value="all">Todos los Roles</option>
+            <option value="student">Estudiantes</option>
+            <option value="administrator">Administradores</option>
+            <option value="editor">Editores</option>
+            <option value="viewer">Invitados / Viewers</option>
           </select>
         </div>
       </div>
 
-      {/* Tabla de Usuarios */}
-      <div className="card-sumi" style={{ overflow: 'hidden', padding: 0 }}>
+      {/* Tabla de Usuarios y Estudiantes WKF */}
+      <div className="card-sumi" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table
             style={{
@@ -669,75 +701,29 @@ export default function AdminUsersPage() {
             <thead>
               <tr
                 style={{
-                  backgroundColor: '#141722',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
                 }}
               >
-                <th
-                  style={{
-                    padding: '0.9rem 1.25rem',
-                    color: '#9FA6B8',
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Usuario
+                <th style={{ padding: '0.9rem 1.25rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                  Estudiante / Usuario
                 </th>
-                <th
-                  style={{
-                    padding: '0.9rem 1rem',
-                    color: '#9FA6B8',
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Rol Asignado
+                <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                  Rol
                 </th>
-                <th
-                  style={{
-                    padding: '0.9rem 1rem',
-                    color: '#9FA6B8',
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
-                    textTransform: 'uppercase',
-                  }}
-                >
+                <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>
                   Estado
                 </th>
-                <th
-                  style={{
-                    padding: '0.9rem 1rem',
-                    color: '#9FA6B8',
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Grado / Karate
+                <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                  Grado (Kyu / Dan)
                 </th>
-                <th
-                  style={{
-                    padding: '0.9rem 1rem',
-                    color: '#9FA6B8',
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Último Acceso
+                <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                  Físico (Edad & Peso)
                 </th>
-                <th
-                  style={{
-                    padding: '0.9rem 1.25rem',
-                    color: '#9FA6B8',
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
-                    textTransform: 'uppercase',
-                    textAlign: 'right',
-                  }}
-                >
+                <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                  Categorías WKF Oficiales
+                </th>
+                <th style={{ padding: '0.9rem 1.25rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', textAlign: 'right' }}>
                   Acciones
                 </th>
               </tr>
@@ -746,7 +732,7 @@ export default function AdminUsersPage() {
               {filteredUsers.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     style={{
                       padding: '3rem 1rem',
                       textAlign: 'center',
@@ -755,20 +741,18 @@ export default function AdminUsersPage() {
                   >
                     {loadingUsers
                       ? 'Cargando usuarios desde MongoDB Atlas...'
-                      : 'No se encontraron usuarios.'}
+                      : 'No se encontraron usuarios con los filtros aplicados.'}
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map((u) => {
-                  const isSelf =
-                    u.email.toLowerCase() === user?.email?.toLowerCase();
+                  const isSelf = u.email.toLowerCase() === user?.email?.toLowerCase();
                   const isMainAdmin =
-                    u.email
-                      .toLowerCase()
-                      .includes('david.artavia.rodriguez@gmail.com') ||
-                    u.email
-                      .toLowerCase()
-                      .includes('davidartaviarodriguez@gmail.com');
+                    u.email.toLowerCase().includes('david.artavia.rodriguez@gmail.com') ||
+                    u.email.toLowerCase().includes('davidartaviarodriguez@gmail.com');
+
+                  const calculatedAge = u.birthDate ? calculateAge(u.birthDate) : (u.age || null);
+                  const isDan = u.kyuDan?.toLowerCase().includes('dan');
 
                   return (
                     <tr
@@ -781,22 +765,15 @@ export default function AdminUsersPage() {
                             : 'transparent',
                       }}
                     >
+                      {/* Usuario */}
                       <td style={{ padding: '1rem 1.25rem' }}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.85rem',
-                          }}
-                        >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
                           <div
                             style={{
                               width: '38px',
                               height: '38px',
                               borderRadius: '50%',
-                              backgroundColor: isMainAdmin
-                                ? '#8E2323'
-                                : '#23346B',
+                              backgroundColor: isMainAdmin ? '#8E2323' : '#23346B',
                               color: '#FFF',
                               display: 'flex',
                               alignItems: 'center',
@@ -815,23 +792,15 @@ export default function AdminUsersPage() {
                                 height={38}
                                 unoptimized
                                 referrerPolicy="no-referrer"
-                                style={{ objectFit: 'cover' }}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                               />
                             ) : (
                               u.name.charAt(0).toUpperCase()
                             )}
                           </div>
                           <div>
-                            <div
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.4rem',
-                              }}
-                            >
-                              <span
-                                style={{ fontWeight: 700, color: '#F7F8FA' }}
-                              >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <span style={{ fontWeight: 700, color: '#F7F8FA' }}>
                                 {u.name}
                               </span>
                               {isMainAdmin && (
@@ -840,8 +809,7 @@ export default function AdminUsersPage() {
                                     fontSize: '0.62rem',
                                     padding: '0.1rem 0.4rem',
                                     backgroundColor: 'rgba(142, 35, 35, 0.3)',
-                                    border:
-                                      '1px solid rgba(184, 49, 49, 0.5)',
+                                    border: '1px solid rgba(184, 49, 49, 0.5)',
                                     color: '#FF9E9E',
                                     borderRadius: '4px',
                                     fontWeight: 700,
@@ -851,18 +819,14 @@ export default function AdminUsersPage() {
                                 </span>
                               )}
                             </div>
-                            <span
-                              style={{
-                                fontSize: '0.78rem',
-                                color: '#9FA6B8',
-                              }}
-                            >
+                            <span style={{ fontSize: '0.78rem', color: '#9FA6B8' }}>
                               {u.email}
                             </span>
                           </div>
                         </div>
                       </td>
 
+                      {/* Rol */}
                       <td style={{ padding: '1rem' }}>
                         <select
                           disabled={isMainAdmin}
@@ -898,6 +862,7 @@ export default function AdminUsersPage() {
                         </select>
                       </td>
 
+                      {/* Estado */}
                       <td style={{ padding: '1rem' }}>
                         <span
                           style={{
@@ -937,45 +902,90 @@ export default function AdminUsersPage() {
                         </span>
                       </td>
 
+                      {/* Grado Marcial (Kyu / Dan) */}
                       <td style={{ padding: '1rem' }}>
                         <span
                           style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            padding: '0.25rem 0.6rem',
+                            borderRadius: '4px',
                             fontSize: '0.82rem',
-                            color: '#F7F8FA',
-                            fontWeight: 600,
-                            display: 'block',
+                            fontWeight: 800,
+                            backgroundColor: isDan ? 'rgba(0, 0, 0, 0.6)' : 'rgba(35, 52, 107, 0.35)',
+                            border: `1px solid ${isDan ? '#FACC15' : 'rgba(140, 166, 248, 0.4)'}`,
+                            color: isDan ? '#FACC15' : '#8CA6F8',
                           }}
                         >
-                          {u.belt}
+                          <Award size={13} color={isDan ? '#FACC15' : '#8CA6F8'} />
+                          {u.kyuDan || '9° Kyu'}
                         </span>
-                        <span style={{ fontSize: '0.72rem', color: '#9FA6B8' }}>
-                          {u.kyuDan} • {u.classesAttended} clases
+                        <span style={{ display: 'block', fontSize: '0.72rem', color: '#9FA6B8', marginTop: '0.2rem' }}>
+                          {u.belt || deriveBeltFromKyuDan(u.kyuDan).beltName}
                         </span>
                       </td>
 
-                      <td
-                        style={{
-                          padding: '1rem',
-                          color: '#9FA6B8',
-                          fontSize: '0.78rem',
-                        }}
-                      >
-                        {u.lastLogin
-                          ? new Date(u.lastLogin).toLocaleDateString('es-ES', {
-                              day: '2-digit',
-                              month: 'short',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                          : 'Sin registros'}
+                      {/* Físico (Edad & Peso) */}
+                      <td style={{ padding: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          <span style={{ fontSize: '0.8rem', color: '#F7F8FA', fontWeight: 600 }}>
+                            {calculatedAge ? `${calculatedAge} años` : 'Sin fecha'}
+                            {u.birthDate ? ` (${u.birthDate})` : ''}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: '#9FA6B8' }}>
+                            {u.weight ? `${u.weight} kg` : 'Sin peso'} • {u.gender === 'female' ? 'Rama Fem.' : 'Rama Masc.'}
+                          </span>
+                        </div>
                       </td>
 
-                      <td
-                        style={{
-                          padding: '1rem 1.25rem',
-                          textAlign: 'right',
-                        }}
-                      >
+                      {/* Categorías WKF Oficiales */}
+                      <td style={{ padding: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                          {/* Kata WKF */}
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '4px',
+                              backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                              border: '1px solid rgba(59, 130, 246, 0.35)',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              color: '#93C5FD',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            <span>🥋</span>
+                            <span>{u.kataCategory || 'Kata WKF pendiente'}</span>
+                          </div>
+
+                          {/* Kumite WKF */}
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '4px',
+                              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                              border: '1px solid rgba(239, 68, 68, 0.35)',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              color: '#FCA5A5',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            <span>🥊</span>
+                            <span>{u.kumiteCategory || 'Kumite WKF pendiente'}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Acciones */}
+                      <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
                         <div
                           style={{
                             display: 'flex',
@@ -984,6 +994,28 @@ export default function AdminUsersPage() {
                             gap: '0.5rem',
                           }}
                         >
+                          {/* Botón Editar Ficha Marcial / WKF */}
+                          <button
+                            onClick={() => openEditModal(u)}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.3rem',
+                              padding: '0.35rem 0.65rem',
+                              backgroundColor: 'rgba(35, 52, 107, 0.45)',
+                              border: '1px solid rgba(140, 166, 248, 0.35)',
+                              borderRadius: '4px',
+                              color: '#8CA6F8',
+                              fontSize: '0.78rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                            }}
+                            title="Editar Datos de Competencia WKF"
+                          >
+                            <Edit2 size={13} />
+                            <span>Editar</span>
+                          </button>
+
                           {u.status === 'pending' && (
                             <button
                               onClick={() =>
@@ -1080,159 +1112,123 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* Modal: Agregar Usuario */}
+      {/* ========================================================= */}
+      {/* MODAL 1: REGISTRAR NUEVO ESTUDIANTE / USUARIO            */}
+      {/* ========================================================= */}
       {isAddModalOpen && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
             zIndex: 110,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
             backdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             padding: '1rem',
+            overflowY: 'auto',
           }}
         >
           <div
             className="card-sumi"
             style={{
-              maxWidth: '480px',
+              maxWidth: '560px',
               width: '100%',
-              padding: '2rem',
+              padding: '1.75rem 2rem',
               position: 'relative',
-              boxShadow: '0 25px 50px rgba(0,0,0,0.8)',
+              maxHeight: '92vh',
+              overflowY: 'auto',
             }}
           >
-            <button
-              onClick={() => setIsAddModalOpen(false)}
-              style={{
-                position: 'absolute',
-                top: '1.25rem',
-                right: '1.25rem',
-                background: 'none',
-                border: 'none',
-                color: '#9FA6B8',
-                cursor: 'pointer',
-              }}
-            >
-              <X size={20} />
-            </button>
-
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.6rem',
-                marginBottom: '0.5rem',
+                justifyContent: 'space-between',
+                marginBottom: '1.25rem',
               }}
             >
-              <UserPlus size={22} color="#8CA6F8" />
-              <h2
-                style={{
-                  fontSize: '1.4rem',
-                  fontWeight: 800,
-                  color: '#F7F8FA',
-                }}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(35, 52, 107, 0.4)',
+                    border: '1px solid rgba(140, 166, 248, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <UserPlus size={16} color="#8CA6F8" />
+                </div>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#F7F8FA', margin: 0 }}>
+                  Registrar Nuevo Estudiante
+                </h2>
+              </div>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: '#9FA6B8', cursor: 'pointer' }}
               >
-                Agregar Usuario
-              </h2>
+                <X size={20} />
+              </button>
             </div>
-            <p
-              style={{
-                color: '#9FA6B8',
-                fontSize: '0.85rem',
-                marginBottom: '1.5rem',
-              }}
-            >
-              Pre-autoriza a un alumno o miembro. Al iniciar sesión con Google
-              con este correo, entrará con los permisos configurados.
-            </p>
 
-            <form
-              onSubmit={handleCreateUser}
-              style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}
-            >
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    color: '#F7F8FA',
-                    marginBottom: '0.35rem',
-                  }}
-                >
-                  Correo Electrónico (Gmail de acceso) *
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="ejemplo@gmail.com"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 0.85rem',
-                    backgroundColor: '#12151E',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: '6px',
-                    color: '#F7F8FA',
-                    fontSize: '0.88rem',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    color: '#F7F8FA',
-                    marginBottom: '0.35rem',
-                  }}
-                >
-                  Nombre Completo
-                </label>
-                <input
-                  type="text"
-                  placeholder="Nombre del alumno o instructor"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 0.85rem',
-                    backgroundColor: '#12151E',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: '6px',
-                    color: '#F7F8FA',
-                    fontSize: '0.88rem',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '1rem',
-                }}
-              >
+            <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* Correo y Nombre */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
-                  <label
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    Correo Electrónico *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="alumno@ejemplo.com"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
                     style={{
-                      display: 'block',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
+                      width: '100%',
+                      padding: '0.65rem 0.85rem',
+                      backgroundColor: '#12151E',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: '6px',
                       color: '#F7F8FA',
-                      marginBottom: '0.35rem',
+                      fontSize: '0.88rem',
+                      outline: 'none',
                     }}
-                  >
-                    Nivel de Rol *
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    Nombre Completo
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Daniel LaRusso"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.85rem',
+                      backgroundColor: '#12151E',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: '6px',
+                      color: '#F7F8FA',
+                      fontSize: '0.88rem',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Rol y Estado */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    Rol del Sistema
                   </label>
                   <select
                     value={newRole}
@@ -1248,30 +1244,19 @@ export default function AdminUsersPage() {
                       outline: 'none',
                     }}
                   >
-                    <option value="student">student (Alumno)</option>
-                    <option value="viewer">viewer (Lector)</option>
-                    <option value="editor">editor (Editor)</option>
+                    <option value="student">student (Estudiante del Dojo)</option>
+                    <option value="viewer">viewer (Invitado)</option>
+                    <option value="editor">editor (Gestor de Contenido)</option>
                     <option value="administrator">administrator (Admin)</option>
                   </select>
                 </div>
-
                 <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      color: '#F7F8FA',
-                      marginBottom: '0.35rem',
-                    }}
-                  >
-                    Estado Inicial *
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    Estado Inicial
                   </label>
                   <select
                     value={newStatus}
-                    onChange={(e) =>
-                      setNewStatus(e.target.value as UserStatus)
-                    }
+                    onChange={(e) => setNewStatus(e.target.value as UserStatus)}
                     style={{
                       width: '100%',
                       padding: '0.65rem 0.85rem',
@@ -1289,89 +1274,187 @@ export default function AdminUsersPage() {
                 </div>
               </div>
 
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '1rem',
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      color: '#F7F8FA',
-                      marginBottom: '0.35rem',
+              {/* SELECCIÓN DE GRADO: KYU (10 a 1) o DAN (1 a 10) - SIN CINTURÓN MANUAL */}
+              <div style={{ padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#8CA6F8', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Grado Marcial Oficial (Kyu o Dan)
+                </label>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewRankType('kyu');
+                      setNewKyuDan('9° Kyu');
                     }}
-                  >
-                    Cinturón
-                  </label>
-                  <select
-                    value={newBelt}
-                    onChange={(e) => setNewBelt(e.target.value)}
                     style={{
-                      width: '100%',
-                      padding: '0.65rem 0.85rem',
-                      backgroundColor: '#12151E',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      flex: 1,
+                      padding: '0.5rem',
+                      backgroundColor: newRankType === 'kyu' ? 'rgba(35, 52, 107, 0.6)' : '#12151E',
+                      border: `1.5px solid ${newRankType === 'kyu' ? '#8CA6F8' : 'rgba(255, 255, 255, 0.12)'}`,
                       borderRadius: '6px',
-                      color: '#F7F8FA',
-                      fontSize: '0.88rem',
-                      outline: 'none',
+                      color: newRankType === 'kyu' ? '#FFF' : '#9FA6B8',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
                     }}
                   >
-                    <option value="Cinturón Blanco">Cinturón Blanco</option>
-                    <option value="Cinturón Amarillo">Cinturón Amarillo</option>
-                    <option value="Cinturón Naranja">Cinturón Naranja</option>
-                    <option value="Cinturón Verde">Cinturón Verde</option>
-                    <option value="Cinturón Azul">Cinturón Azul</option>
-                    <option value="Cinturón Marrón">Cinturón Marrón</option>
-                    <option value="Cinturón Negro">Cinturón Negro</option>
-                  </select>
+                    Kyu (10° al 1°)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewRankType('dan');
+                      setNewKyuDan('1° Dan');
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '0.5rem',
+                      backgroundColor: newRankType === 'dan' ? 'rgba(234, 179, 8, 0.2)' : '#12151E',
+                      border: `1.5px solid ${newRankType === 'dan' ? '#FACC15' : 'rgba(255, 255, 255, 0.12)'}`,
+                      borderRadius: '6px',
+                      color: newRankType === 'dan' ? '#FACC15' : '#9FA6B8',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Dan (1° al 10° Dan)
+                  </button>
                 </div>
 
+                <select
+                  value={newKyuDan}
+                  onChange={(e) => setNewKyuDan(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    backgroundColor: '#12151E',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '6px',
+                    color: '#F7F8FA',
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
+                    outline: 'none',
+                  }}
+                >
+                  {newRankType === 'kyu'
+                    ? KYU_RANKS.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))
+                    : DAN_RANKS.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                </select>
+              </div>
+
+              {/* DATOS FÍSICOS WKF: FECHA DE NACIMIENTO, PESO Y GÉNERO */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '0.85rem' }}>
                 <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      color: '#F7F8FA',
-                      marginBottom: '0.35rem',
-                    }}
-                  >
-                    Grado Kyu / Dan
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    <Calendar size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                    Fecha de Nacimiento
                   </label>
                   <input
-                    type="text"
-                    placeholder="9° Kyu, 1° Dan, etc."
-                    value={newKyuDan}
-                    onChange={(e) => setNewKyuDan(e.target.value)}
+                    type="date"
+                    value={newBirthDate}
+                    onChange={(e) => setNewBirthDate(e.target.value)}
                     style={{
                       width: '100%',
-                      padding: '0.65rem 0.85rem',
+                      padding: '0.6rem 0.65rem',
                       backgroundColor: '#12151E',
                       border: '1px solid rgba(255, 255, 255, 0.12)',
                       borderRadius: '6px',
                       color: '#F7F8FA',
-                      fontSize: '0.88rem',
+                      fontSize: '0.85rem',
                       outline: 'none',
                     }}
                   />
                 </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    <Scale size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                    Peso (kg)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    placeholder="Ej: 64.5"
+                    value={newWeight}
+                    onChange={(e) => setNewWeight(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.6rem 0.65rem',
+                      backgroundColor: '#12151E',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: '6px',
+                      color: '#F7F8FA',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    Rama WKF
+                  </label>
+                  <select
+                    value={newGender}
+                    onChange={(e) => setNewGender(e.target.value as 'male' | 'female')}
+                    style={{
+                      width: '100%',
+                      padding: '0.6rem 0.65rem',
+                      backgroundColor: '#12151E',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: '6px',
+                      color: '#F7F8FA',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                    }}
+                  >
+                    <option value="male">Masculino</option>
+                    <option value="female">Femenino</option>
+                  </select>
+                </div>
               </div>
 
+              {/* VISTA PREVIA DEL CÁLCULO WKF EN TIEMPO REAL */}
               <div
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  gap: '0.75rem',
-                  marginTop: '1rem',
+                  padding: '0.9rem',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, rgba(35, 52, 107, 0.25) 0%, rgba(20, 24, 35, 0.8) 100%)',
+                  border: '1px solid rgba(140, 166, 248, 0.35)',
                 }}
               >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.45rem' }}>
+                  <Sparkles size={14} color="#8CA6F8" />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8CA6F8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Cálculo Automático WKF (World Karate Federation)
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.82rem' }}>
+                  <div>
+                    <strong style={{ color: '#93C5FD' }}>🥋 Kata WKF:</strong>{' '}
+                    <span style={{ color: '#F7F8FA' }}>{addWkfPreview.kataCategory}</span>
+                  </div>
+                  <div>
+                    <strong style={{ color: '#FCA5A5' }}>🥊 Kumite WKF:</strong>{' '}
+                    <span style={{ color: '#F7F8FA' }}>{addWkfPreview.kumiteCategory}</span>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#9FA6B8', marginTop: '0.2rem' }}>
+                    Edad calculada: <strong>{addWkfPreview.age > 0 ? `${addWkfPreview.age} años` : 'Requiere fecha'}</strong> • Cinturón sugerido: <strong>{addWkfPreview.beltName}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones del Formulario */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
@@ -1393,7 +1476,375 @@ export default function AdminUsersPage() {
                   className="btn-martial-primary"
                   style={{ padding: '0.65rem 1.5rem', fontSize: '0.88rem' }}
                 >
-                  {submitting ? 'Guardando...' : 'Guardar Usuario'}
+                  {submitting ? 'Guardando...' : 'Guardar Estudiante'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL 2: EDITAR ESTUDIANTE Y FICHA MARCIAL WKF            */}
+      {/* ========================================================= */}
+      {isEditModalOpen && editingUser && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 110,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            overflowY: 'auto',
+          }}
+        >
+          <div
+            className="card-sumi"
+            style={{
+              maxWidth: '560px',
+              width: '100%',
+              padding: '1.75rem 2rem',
+              position: 'relative',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '1.25rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(35, 52, 107, 0.4)',
+                    border: '1px solid rgba(140, 166, 248, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Edit2 size={16} color="#8CA6F8" />
+                </div>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#F7F8FA', margin: 0 }}>
+                  Editar Ficha Marcial & WKF
+                </h2>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: '#9FA6B8', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditUser} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    Correo Electrónico (No editable)
+                  </label>
+                  <input
+                    type="email"
+                    disabled
+                    value={editingUser.email}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.85rem',
+                      backgroundColor: '#0D0F15',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '6px',
+                      color: '#9FA6B8',
+                      fontSize: '0.88rem',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    Nombre del Estudiante
+                  </label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.85rem',
+                      backgroundColor: '#12151E',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: '6px',
+                      color: '#F7F8FA',
+                      fontSize: '0.88rem',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    Rol del Sistema
+                  </label>
+                  <select
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value as UserRole)}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.85rem',
+                      backgroundColor: '#12151E',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: '6px',
+                      color: '#F7F8FA',
+                      fontSize: '0.88rem',
+                      outline: 'none',
+                    }}
+                  >
+                    <option value="student">student (Estudiante del Dojo)</option>
+                    <option value="viewer">viewer (Invitado)</option>
+                    <option value="editor">editor (Gestor)</option>
+                    <option value="administrator">administrator (Admin)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    Estado de la Cuenta
+                  </label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value as UserStatus)}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.85rem',
+                      backgroundColor: '#12151E',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: '6px',
+                      color: '#F7F8FA',
+                      fontSize: '0.88rem',
+                      outline: 'none',
+                    }}
+                  >
+                    <option value="active">active (Habilitado)</option>
+                    <option value="pending">pending (Pendiente)</option>
+                    <option value="blocked">blocked (Suspendido)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* SELECCIÓN DE GRADO: KYU O DAN */}
+              <div style={{ padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#8CA6F8', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Grado Marcial Oficial (Kyu o Dan)
+                </label>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditRankType('kyu');
+                      setEditKyuDan('9° Kyu');
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '0.5rem',
+                      backgroundColor: editRankType === 'kyu' ? 'rgba(35, 52, 107, 0.6)' : '#12151E',
+                      border: `1.5px solid ${editRankType === 'kyu' ? '#8CA6F8' : 'rgba(255, 255, 255, 0.12)'}`,
+                      borderRadius: '6px',
+                      color: editRankType === 'kyu' ? '#FFF' : '#9FA6B8',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Kyu (10° al 1°)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditRankType('dan');
+                      setEditKyuDan('1° Dan');
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '0.5rem',
+                      backgroundColor: editRankType === 'dan' ? 'rgba(234, 179, 8, 0.2)' : '#12151E',
+                      border: `1.5px solid ${editRankType === 'dan' ? '#FACC15' : 'rgba(255, 255, 255, 0.12)'}`,
+                      borderRadius: '6px',
+                      color: editRankType === 'dan' ? '#FACC15' : '#9FA6B8',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Dan (1° al 10° Dan)
+                  </button>
+                </div>
+
+                <select
+                  value={editKyuDan}
+                  onChange={(e) => setEditKyuDan(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    backgroundColor: '#12151E',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '6px',
+                    color: '#F7F8FA',
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
+                    outline: 'none',
+                  }}
+                >
+                  {editRankType === 'kyu'
+                    ? KYU_RANKS.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))
+                    : DAN_RANKS.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                </select>
+              </div>
+
+              {/* DATOS FÍSICOS WKF: FECHA DE NACIMIENTO, PESO Y GÉNERO */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '0.85rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    <Calendar size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                    Fecha de Nacimiento
+                  </label>
+                  <input
+                    type="date"
+                    value={editBirthDate}
+                    onChange={(e) => setEditBirthDate(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.6rem 0.65rem',
+                      backgroundColor: '#12151E',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: '6px',
+                      color: '#F7F8FA',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    <Scale size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                    Peso (kg)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    placeholder="Ej: 64.5"
+                    value={editWeight}
+                    onChange={(e) => setEditWeight(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.6rem 0.65rem',
+                      backgroundColor: '#12151E',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: '6px',
+                      color: '#F7F8FA',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                    Rama WKF
+                  </label>
+                  <select
+                    value={editGender}
+                    onChange={(e) => setEditGender(e.target.value as 'male' | 'female')}
+                    style={{
+                      width: '100%',
+                      padding: '0.6rem 0.65rem',
+                      backgroundColor: '#12151E',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: '6px',
+                      color: '#F7F8FA',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                    }}
+                  >
+                    <option value="male">Masculino</option>
+                    <option value="female">Femenino</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* VISTA PREVIA WKF */}
+              <div
+                style={{
+                  padding: '0.9rem',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, rgba(35, 52, 107, 0.25) 0%, rgba(20, 24, 35, 0.8) 100%)',
+                  border: '1px solid rgba(140, 166, 248, 0.35)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.45rem' }}>
+                  <Sparkles size={14} color="#8CA6F8" />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8CA6F8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Categorías WKF Actualizadas
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.82rem' }}>
+                  <div>
+                    <strong style={{ color: '#93C5FD' }}>🥋 Kata WKF:</strong>{' '}
+                    <span style={{ color: '#F7F8FA' }}>{editWkfPreview.kataCategory}</span>
+                  </div>
+                  <div>
+                    <strong style={{ color: '#FCA5A5' }}>🥊 Kumite WKF:</strong>{' '}
+                    <span style={{ color: '#F7F8FA' }}>{editWkfPreview.kumiteCategory}</span>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#9FA6B8', marginTop: '0.2rem' }}>
+                    Edad: <strong>{editWkfPreview.age > 0 ? `${editWkfPreview.age} años` : 'Requiere fecha'}</strong> • Cinturón: <strong>{editWkfPreview.beltName}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones del Formulario */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  style={{
+                    padding: '0.65rem 1.25rem',
+                    backgroundColor: 'transparent',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '6px',
+                    color: '#9FA6B8',
+                    cursor: 'pointer',
+                    fontSize: '0.88rem',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="btn-martial-primary"
+                  style={{ padding: '0.65rem 1.5rem', fontSize: '0.88rem' }}
+                >
+                  {submitting ? 'Guardando...' : 'Guardar Cambios'}
                 </button>
               </div>
             </form>
