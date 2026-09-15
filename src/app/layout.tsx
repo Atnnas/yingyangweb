@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Zen_Kaku_Gothic_New } from 'next/font/google';
 import './globals.css';
+import NextAuthWrapper from '@/context/NextAuthWrapper';
 import { AuthProvider } from '@/context/AuthContext';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -32,12 +33,14 @@ export default function RootLayout({
   return (
     <html lang="es" className={zenKaku.variable}>
       <body style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <AuthProvider>
-          <Header />
-          <main style={{ flex: 1 }}>{children}</main>
-          <Footer />
-          <GoogleAuthModal />
-        </AuthProvider>
+        <NextAuthWrapper>
+          <AuthProvider>
+            <Header />
+            <main style={{ flex: 1 }}>{children}</main>
+            <Footer />
+            <GoogleAuthModal />
+          </AuthProvider>
+        </NextAuthWrapper>
       </body>
     </html>
   );

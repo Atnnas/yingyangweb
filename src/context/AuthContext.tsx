@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { User } from '@/types';
 
 interface AuthContextType {
@@ -15,76 +16,54 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Usuario de demostración para visualización inmediata del sistema
-const DEMO_STUDENT: User = {
-  id: 'usr_google_88319',
-  name: 'Kenji Morales',
-  email: 'kenji.morales@gmail.com',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-  belt: 'Cinturón Marrón',
-  beltColor: '#6E4720',
-  kyuDan: '1er Kyu',
-  role: 'student',
-  joinedDate: 'Marzo 2024',
-  classesAttended: 84,
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Recuperar sesión guardada localmente
+  // Sincronizar usuario de NextAuth con nuestro estado de aplicación
   useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem('dojo_yingyang_user');
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-      }
-    } catch (e) {
-      console.error('Error al cargar sesión local:', e);
-    } finally {
-      setIsLoading(false);
+    if (session?.user) {
+      const authUser: User = {
+        id: (session.user as Record<string, unknown>).id as string || session.user.email || 'usr_google',
+        name: session.user.name || 'Alumno',
+        email: session.user.email || '',
+        avatar: session.user.image || undefined,
+        belt: ((session.user as Record<string, unknown>).belt as string) || 'Cinturón Blanco',
+        beltColor: '#FFFFFF',
+        kyuDan: ((session.user as Record<string, unknown>).kyuDan as string) || '9° Kyu',
+        role: ((session.user as Record<string, unknown>).role as 'student' | 'instructor' | 'admin') || 'student',
+        joinedDate: 'Registrado',
+        classesAttended: ((session.user as Record<string, unknown>).classesAttended as number) || 0,
+      };
+      setUser(authUser);
+    } else if (status === 'unauthenticated') {
+      setUser(null);
     }
-  }, []);
+  }, [session, status]);
 
   const openAuthModal = () => setIsAuthModalOpen(true);
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
   const loginWithGoogle = async () => {
-    setIsLoading(true);
-    // Simulación del flujo de autenticación con Google OAuth
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setUser(DEMO_STUDENT);
     try {
-      localStorage.setItem('dojo_yingyang_user', JSON.stringify(DEMO_STUDENT));
-      // Sincronizar perfil con MongoDB
-      await fetch('/api/auth/sync-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(DEMO_STUDENT),
-      });
-    } catch (e) {
-      console.error('Error al persistir sesión o sincronizar con MongoDB:', e);
+      // Iniciar el flujo de OAuth 2.0 oficial de Google
+      await signIn('google', { callbackUrl: window.location.href });
+    } catch (err) {
+      console.error('Error al iniciar sesión con Google:', err);
     }
-    setIsLoading(false);
-    closeAuthModal();
   };
 
   const logout = () => {
     setUser(null);
-    try {
-      localStorage.removeItem('dojo_yingyang_user');
-    } catch (e) {
-      console.error('Error al remover sesión:', e);
-    }
+    signOut({ callbackUrl: '/' });
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isLoading,
+        isLoading: status === 'loading',
         isAuthModalOpen,
         openAuthModal,
         closeAuthModal,
