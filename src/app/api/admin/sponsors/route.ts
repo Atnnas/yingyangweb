@@ -85,6 +85,7 @@ export async function GET(request: NextRequest) {
         contractExpiry: s.contractExpiry || '',
         tier: (s.tier as SponsorTier) || 'bronce',
         websiteUrl: s.websiteUrl || '',
+        phone: s.phone || '',
         notes: s.notes || '',
         status: s.status || computedStatus,
         createdAt: s.createdAt || new Date(),
@@ -119,6 +120,7 @@ export async function POST(request: NextRequest) {
       contractStart,
       tier = 'bronce',
       websiteUrl = '',
+      phone = '',
       notes = '',
     } = body;
 
@@ -144,6 +146,7 @@ export async function POST(request: NextRequest) {
       contractExpiry,
       tier: tier as SponsorTier,
       websiteUrl: websiteUrl.trim(),
+      phone: phone.trim(),
       notes: notes.trim(),
       status,
       createdBy: auth.userEmail,
@@ -173,7 +176,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, name, logo, contractExpiry, contractStart, tier, websiteUrl, notes, status } = body;
+    const { id, name, logo, contractExpiry, contractStart, tier, websiteUrl, phone, notes, status } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Se requiere el ID del patrocinador a modificar' }, { status: 400 });
@@ -197,6 +200,7 @@ export async function PATCH(request: NextRequest) {
     }
     if (status) updateFields.status = status;
     if (websiteUrl !== undefined) updateFields.websiteUrl = websiteUrl.trim();
+    if (phone !== undefined) updateFields.phone = phone.trim();
     if (notes !== undefined) updateFields.notes = notes.trim();
 
     const result = await sponsorsCol.updateOne(

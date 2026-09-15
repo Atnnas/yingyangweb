@@ -73,6 +73,7 @@ export interface Sponsor {
   contractExpiry: string; // Fecha de vigencia de contrato (YYYY-MM-DD)
   tier: SponsorTier; // oro | plata | bronce
   websiteUrl?: string;
+  phone?: string; // Número de teléfono o WhatsApp de contacto
   notes?: string;
   status?: SponsorStatus;
   createdAt?: string | Date;

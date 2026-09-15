@@ -22,6 +22,7 @@ import {
   Award,
   Sparkles,
   Building,
+  Phone,
 } from 'lucide-react';
 
 export default function AdminSponsorsPage() {
@@ -45,6 +46,7 @@ export default function AdminSponsorsPage() {
   const [contractStart, setContractStart] = useState(() => new Date().toISOString().split('T')[0]);
   const [contractExpiry, setContractExpiry] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
+  const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState<SponsorStatus>('active');
 
@@ -110,6 +112,7 @@ export default function AdminSponsorsPage() {
     oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
     setContractExpiry(oneYearLater.toISOString().split('T')[0]);
     setWebsiteUrl('');
+    setPhone('');
     setNotes('');
     setStatus('active');
     setIsModalOpen(true);
@@ -124,6 +127,7 @@ export default function AdminSponsorsPage() {
     setContractStart(sp.contractStart || new Date().toISOString().split('T')[0]);
     setContractExpiry(sp.contractExpiry);
     setWebsiteUrl(sp.websiteUrl || '');
+    setPhone(sp.phone || '');
     setNotes(sp.notes || '');
     setStatus(sp.status || 'active');
     setIsModalOpen(true);
@@ -159,6 +163,7 @@ export default function AdminSponsorsPage() {
         contractStart,
         contractExpiry,
         websiteUrl: websiteUrl.trim(),
+        phone: phone.trim(),
         notes: notes.trim(),
         status,
       };
@@ -653,25 +658,42 @@ export default function AdminSponsorsPage() {
                     {sp.name}
                   </h3>
 
-                  {sp.websiteUrl && (
-                    <a
-                      href={sp.websiteUrl.startsWith('http') ? sp.websiteUrl : `https://${sp.websiteUrl}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.3rem',
-                        fontSize: '0.8rem',
-                        color: '#8CA6F8',
-                        textDecoration: 'none',
-                        marginBottom: '0.75rem',
-                      }}
-                    >
-                      <span>{sp.websiteUrl.replace(/^https?:\/\//, '')}</span>
-                      <ExternalLink size={12} />
-                    </a>
-                  )}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.65rem', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    {sp.websiteUrl && (
+                      <a
+                        href={sp.websiteUrl.startsWith('http') ? sp.websiteUrl : `https://${sp.websiteUrl}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          fontSize: '0.8rem',
+                          color: '#8CA6F8',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        <ExternalLink size={12} />
+                        <span>{sp.websiteUrl.replace(/^https?:\/\//, '')}</span>
+                      </a>
+                    )}
+                    {sp.phone && (
+                      <a
+                        href={`tel:${sp.phone}`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          fontSize: '0.8rem',
+                          color: '#34D399',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        <Phone size={12} />
+                        <span>{sp.phone}</span>
+                      </a>
+                    )}
+                  </div>
 
                   {sp.notes && (
                     <p style={{ fontSize: '0.82rem', color: '#9DA3B4', lineHeight: 1.5, margin: '0.5rem 0' }}>
@@ -1065,6 +1087,32 @@ export default function AdminSponsorsPage() {
                     outline: 'none',
                   }}
                 />
+              </div>
+
+              {/* Teléfono de Contacto / WhatsApp */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#F7F8FA', marginBottom: '0.35rem' }}>
+                  Teléfono de Contacto o WhatsApp (Opcional)
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="Ej: +506 8888-0000 o 2222-0000"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.85rem 0.65rem 2.2rem',
+                      backgroundColor: '#12151E',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: '6px',
+                      color: '#F7F8FA',
+                      fontSize: '0.88rem',
+                      outline: 'none',
+                    }}
+                  />
+                  <Phone size={14} color="#9FA6B8" style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)' }} />
+                </div>
               </div>
 
               {/* Notas / Descripción */}

@@ -28,6 +28,7 @@ export async function GET() {
         logo: s.logo,
         tier: s.tier || 'oro',
         websiteUrl: s.websiteUrl || '',
+        phone: s.phone || '',
         contractExpiry: s.contractExpiry || '',
         status: 'active',
       }));
