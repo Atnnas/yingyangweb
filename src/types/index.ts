@@ -60,3 +60,21 @@ export interface ScheduleClass {
   instructor: string;
   tag: 'ying' | 'yang' | 'neutral';
 }
+
+export type SponsorTier = 'oro' | 'plata' | 'bronce';
+export type SponsorStatus = 'active' | 'expired' | 'pending';
+
+export interface Sponsor {
+  id?: string;
+  _id?: string;
+  name: string;
+  logo: string; // URL o Base64 Data URI cargado directamente desde el dispositivo
+  contractStart?: string;
+  contractExpiry: string; // Fecha de vigencia de contrato (YYYY-MM-DD)
+  tier: SponsorTier; // oro | plata | bronce
+  websiteUrl?: string;
+  notes?: string;
+  status?: SponsorStatus;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}

@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Users,
   CalendarCheck,
+  Handshake,
   ArrowLeft,
   RefreshCw,
   Lock,
@@ -193,6 +194,7 @@ export default function AdminLayout({
   const isUsersActive =
     pathname === '/admin/users' || pathname === '/admin';
   const isAttendanceActive = pathname?.startsWith('/admin/attendance');
+  const isSponsorsActive = pathname?.startsWith('/admin/sponsors');
 
   return (
     <div
@@ -354,6 +356,43 @@ export default function AdminLayout({
                 color={isAttendanceActive ? '#8CA6F8' : '#9FA6B8'}
               />
               <span>Asistencia</span>
+            </div>
+          </Link>
+
+          {/* Tab 3: /admin/sponsors */}
+          <Link
+            href="/admin/sponsors"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.85rem 1rem',
+              borderRadius: '8px',
+              border: isSponsorsActive
+                ? '1px solid rgba(140, 166, 248, 0.4)'
+                : '1px solid transparent',
+              backgroundColor: isSponsorsActive
+                ? 'rgba(35, 52, 107, 0.45)'
+                : 'transparent',
+              color: isSponsorsActive ? '#F7F8FA' : '#9FA6B8',
+              fontSize: '0.9rem',
+              fontWeight: isSponsorsActive ? 700 : 500,
+              textDecoration: 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+              }}
+            >
+              <Handshake
+                size={18}
+                color={isSponsorsActive ? '#8CA6F8' : '#9FA6B8'}
+              />
+              <span>Patrocinadores</span>
             </div>
           </Link>
         </nav>
