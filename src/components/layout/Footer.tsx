@@ -1,9 +1,15 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { MapPin, Phone, Clock, Mail, Shield } from 'lucide-react';
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (pathname === '/') return null;
+
   return (
     <footer
       style={{

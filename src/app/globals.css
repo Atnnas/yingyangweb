@@ -27,7 +27,7 @@
   --font-family-base: var(--font-zen-kaku), system-ui, -apple-system, sans-serif;
   
   /* Sistema de espaciado y contenedores */
-  --container-max-width: 1360px;
+  --container-max-width: 100%;
 }
 
 * {
@@ -106,8 +106,8 @@ p {
   max-width: var(--container-max-width);
   margin-left: auto;
   margin-right: auto;
-  padding-left: clamp(1rem, 4vw, 2.5rem);
-  padding-right: clamp(1rem, 4vw, 2.5rem);
+  padding-left: clamp(1.5rem, 5vw, 4.5rem);
+  padding-right: clamp(1.5rem, 5vw, 4.5rem);
   position: relative;
   z-index: 1;
 }
