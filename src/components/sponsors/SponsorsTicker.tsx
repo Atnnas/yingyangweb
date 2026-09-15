@@ -5,34 +5,6 @@ import Link from 'next/link';
 import { Sponsor } from '@/types';
 import { Handshake, Sparkles, Award, Building, ExternalLink } from 'lucide-react';
 
-// Patrocinadores por defecto en caso de que aún no se hayan creado en base de datos
-const DEFAULT_SPONSORS: Partial<Sponsor>[] = [
-  {
-    id: 'def_1',
-    name: 'Tatami Pro Martial Arts',
-    tier: 'oro',
-    logo: '/images/logos/Logo_Blanco_Transparente.png',
-  },
-  {
-    id: 'def_2',
-    name: 'Kuma Performance Nutrition',
-    tier: 'oro',
-    logo: '/images/logos/Logo_Color_Transparente.png',
-  },
-  {
-    id: 'def_3',
-    name: 'Budo Sports International',
-    tier: 'plata',
-    logo: '/images/logos/Logo_Blanco_Transparente.png',
-  },
-  {
-    id: 'def_4',
-    name: 'Equipamiento Marcial Ying Yang',
-    tier: 'bronce',
-    logo: '/images/logos/Logo_Blanco_Color_Transparente.png',
-  },
-];
-
 export default function SponsorsTicker() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,17 +15,14 @@ export default function SponsorsTicker() {
         const res = await fetch('/api/sponsors');
         if (res.ok) {
           const data = await res.json();
-          if (data.sponsors && data.sponsors.length > 0) {
-            setSponsors(data.sponsors);
-          } else {
-            setSponsors(DEFAULT_SPONSORS as Sponsor[]);
-          }
+          // Cargar exclusivamente los patrocinadores reales guardados en la base de datos
+          setSponsors(data.sponsors || []);
         } else {
-          setSponsors(DEFAULT_SPONSORS as Sponsor[]);
+          setSponsors([]);
         }
       } catch (err) {
         console.error('Error cargando patrocinadores para el cintillo:', err);
-        setSponsors(DEFAULT_SPONSORS as Sponsor[]);
+        setSponsors([]);
       } finally {
         setLoading(false);
       }
@@ -61,10 +30,14 @@ export default function SponsorsTicker() {
     loadSponsors();
   }, []);
 
-  // Multiplicamos la lista para lograr un scroll infinito perfecto sin saltos
-  const displayItems = sponsors.length > 0
-    ? [...sponsors, ...sponsors, ...sponsors, ...sponsors]
-    : [];
+  // Si no hay patrocinadores reales en base de datos o está cargando, no mostrar nada de ejemplo
+  if (loading || sponsors.length === 0) {
+    return null;
+  }
+
+  // Repetir los elementos reales para lograr un desplazamiento infinito continuo y suave
+  const repeatCount = Math.max(4, Math.ceil(8 / sponsors.length));
+  const displayItems = Array(repeatCount).fill(sponsors).flat();
 
   const getTierIcon = (tier: string) => {
     switch (tier) {
