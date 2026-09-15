@@ -1,43 +1,15 @@
-'use client';
+import React from 'react';
+import { MapPin, Phone, Mail, Clock, MessageSquare, ExternalLink } from 'lucide-react';
+import type { Metadata } from 'next';
 
-import React, { useState } from 'react';
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle2, MessageSquare, ShieldCheck, Sparkles } from 'lucide-react';
-import Image from 'next/image';
+export const metadata: Metadata = {
+  title: 'Contacto | Dojo de Karate Ying Yang',
+  description: 'Contáctanos directamente por WhatsApp o visita nuestras instalaciones del Dojo Ying Yang.',
+};
 
 export default function ContactoPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    program: 'Karate Tradicional (Adultos)',
-    experience: 'Principiante (Sin experiencia)',
-    message: ''
-  });
-
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSending(true);
-    try {
-      await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      setIsSubmitted(true);
-    } catch (err) {
-      console.error('Error enviando formulario:', err);
-      // Permitimos que continúe para mostrar feedback positivo al usuario
-      setIsSubmitted(true);
-    } finally {
-      setIsSending(false);
-    }
-  };
-
   const whatsappMessage = encodeURIComponent(
-    `Hola Sensei! Me gustaría solicitar una clase de prueba gratuita en el Dojo Ying Yang. Mi nombre es ${formData.name || 'un futuro practicante'}.`
+    'Hola Sensei! Me gustaría solicitar información sobre las clases y horarios en el Dojo Ying Yang.'
   );
 
   return (
@@ -56,20 +28,20 @@ export default function ContactoPage() {
               style={{
                 fontSize: '0.8rem',
                 fontWeight: 700,
-                color: '#FF8A8A',
+                color: '#8CA6F8',
                 letterSpacing: '0.2em',
                 textTransform: 'uppercase',
                 display: 'block',
                 marginBottom: '0.75rem',
               }}
             >
-              Comienza Tu Práctica
+              Atención Inmediata
             </span>
             <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', marginBottom: '1.25rem' }}>
-              Contacto & Clase de Prueba
+              Contacto & Ubicación
             </h1>
             <p style={{ fontSize: '1.1rem', color: '#9DA3B4', lineHeight: 1.7 }}>
-              Te esperamos en el tatami. Reserva tu primera sesión sin costo para ti o tus hijos, o escríbenos directamente por WhatsApp.
+              Te esperamos en el tatami. Escríbenos directamente por WhatsApp para atención inmediata o consulta los canales y ubicación oficial de nuestro dojo.
             </p>
           </div>
         </div>
@@ -77,330 +49,229 @@ export default function ContactoPage() {
 
       {/* ================= CONTENIDO PRINCIPAL ================= */}
       <section style={{ padding: 'clamp(3.5rem, 6vw, 5.5rem) 0' }}>
-        <div className="container-dojo">
+        <div className="container-dojo" style={{ maxWidth: '1080px' }}>
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 460px), 1fr))',
-              gap: 'clamp(2rem, 5vw, 3.5rem)',
-              alignItems: 'flex-start',
+              gap: '2.5rem',
+              alignItems: 'stretch',
             }}
           >
-            {/* Formulario de Contacto */}
+            {/* WhatsApp Directo y Chatear de Inmediato */}
             <div
-              className="glass-panel"
               style={{
-                padding: 'clamp(1.75rem, 5vw, 2.75rem)',
-                borderRadius: '14px',
+                backgroundColor: '#0F1A14',
+                border: '1px solid rgba(37, 211, 102, 0.35)',
+                borderRadius: '16px',
+                padding: 'clamp(2rem, 5vw, 2.75rem)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                boxShadow: '0 15px 35px rgba(0, 0, 0, 0.4), 0 0 25px rgba(37, 211, 102, 0.08)',
               }}
             >
-              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: '#F7F8FA' }}>
-                Reserva Tu Clase Muestra
-              </h2>
-              <p style={{ fontSize: '0.9rem', color: '#9DA3B4', marginBottom: '2rem' }}>
-                Completa el formulario y te confirmaremos el horario ideal según tu edad y nivel.
-              </p>
-
-              {isSubmitted ? (
-                <div
-                  style={{
-                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                    border: '1px solid rgba(34, 197, 94, 0.3)',
-                    borderRadius: '8px',
-                    padding: '2rem',
-                    textAlign: 'center',
-                    animation: 'fadeIn 0.3s ease',
-                  }}
-                >
-                  <CheckCircle2 size={48} color="#22C55E" style={{ margin: '0 auto 1rem' }} />
-                  <h3 style={{ fontSize: '1.3rem', color: '#FFFFFF', marginBottom: '0.5rem' }}>
-                    ¡Solicitud Recibida con Éxito!
-                  </h3>
-                  <p style={{ fontSize: '0.9rem', color: '#CBD5E1', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-                    Gracias por dar el primer paso. El equipo técnico del Dojo Ying Yang se comunicará contigo en breve para coordinar tu clase muestra.
-                  </p>
-                  <button
-                    onClick={() => setIsSubmitted(false)}
-                    className="btn-martial-secondary"
-                    style={{ fontSize: '0.85rem' }}
-                  >
-                    Enviar otra consulta
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  {/* Nombre */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#E2E8F0', marginBottom: '0.4rem' }}>
-                      Nombre Completo *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Ej. Carlos Mendoza"
-                      style={{
-                        width: '100%',
-                        padding: '0.8rem 1rem',
-                        backgroundColor: '#161922',
-                        border: '1px solid rgba(255, 255, 255, 0.12)',
-                        borderRadius: '6px',
-                        color: '#FFFFFF',
-                        fontSize: '0.9rem',
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
-
-                  {/* Correo y Teléfono en dos columnas */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#E2E8F0', marginBottom: '0.4rem' }}>
-                        Correo Electrónico *
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="tu.correo@ejemplo.com"
-                        style={{
-                          width: '100%',
-                          padding: '0.8rem 1rem',
-                          backgroundColor: '#161922',
-                          border: '1px solid rgba(255, 255, 255, 0.12)',
-                          borderRadius: '6px',
-                          color: '#FFFFFF',
-                          fontSize: '0.9rem',
-                          outline: 'none',
-                        }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#E2E8F0', marginBottom: '0.4rem' }}>
-                        Teléfono / WhatsApp *
-                      </label>
-                      <input
-                        type="tel"
-                        required
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+52 55 1234 5678"
-                        style={{
-                          width: '100%',
-                          padding: '0.8rem 1rem',
-                          backgroundColor: '#161922',
-                          border: '1px solid rgba(255, 255, 255, 0.12)',
-                          borderRadius: '6px',
-                          color: '#FFFFFF',
-                          fontSize: '0.9rem',
-                          outline: 'none',
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Programa de Interés */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#E2E8F0', marginBottom: '0.4rem' }}>
-                      Disciplina / Programa de Interés *
-                    </label>
-                    <select
-                      value={formData.program}
-                      onChange={(e) => setFormData({ ...formData, program: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '0.8rem 1rem',
-                        backgroundColor: '#161922',
-                        border: '1px solid rgba(255, 255, 255, 0.12)',
-                        borderRadius: '6px',
-                        color: '#FFFFFF',
-                        fontSize: '0.9rem',
-                        outline: 'none',
-                      }}
-                    >
-                      <option value="Karate Infantil (4 a 11 años)">Karate Infantil (4 a 11 años)</option>
-                      <option value="Karate Juvenil (12 a 17 años)">Karate Juvenil (12 a 17 años)</option>
-                      <option value="Karate Tradicional (Adultos)">Karate Tradicional (Adultos)</option>
-                      <option value="Kumite Deportivo WKF">Kumite Deportivo WKF (Competencia)</option>
-                      <option value="Defensa Personal Urbana">Defensa Personal Urbana</option>
-                    </select>
-                  </div>
-
-                  {/* Mensaje */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#E2E8F0', marginBottom: '0.4rem' }}>
-                      Mensaje o Pregunta Especial
-                    </label>
-                    <textarea
-                      rows={4}
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      placeholder="Indícanos si tienes alguna lesión previa, disponibilidad de horario o preguntas adicionales..."
-                      style={{
-                        width: '100%',
-                        padding: '0.8rem 1rem',
-                        backgroundColor: '#161922',
-                        border: '1px solid rgba(255, 255, 255, 0.12)',
-                        borderRadius: '6px',
-                        color: '#FFFFFF',
-                        fontSize: '0.9rem',
-                        outline: 'none',
-                        resize: 'vertical',
-                      }}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSending}
-                    className="btn-martial-primary"
-                    style={{ width: '100%', padding: '0.95rem' }}
-                  >
-                    <Send size={16} />
-                    <span>{isSending ? 'Enviando solicitud...' : 'Confirmar Reserva de Clase Muestra'}</span>
-                  </button>
-                </form>
-              )}
-            </div>
-
-            {/* Información Directa y WhatsApp */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {/* WhatsApp Directo */}
-              <div
-                style={{
-                  backgroundColor: '#111B15',
-                  border: '1px solid rgba(37, 211, 102, 0.3)',
-                  borderRadius: '12px',
-                  padding: '2rem',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '1rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div
                     style={{
-                      width: '42px',
-                      height: '42px',
+                      width: '54px',
+                      height: '54px',
                       borderRadius: '50%',
                       backgroundColor: '#25D366',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: '#FFFFFF',
+                      color: '#062B16',
+                      boxShadow: '0 0 20px rgba(37, 211, 102, 0.4)',
+                      flexShrink: 0,
                     }}
                   >
-                    <MessageSquare size={22} />
+                    <MessageSquare size={28} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '1.2rem', color: '#FFFFFF', margin: 0 }}>¿Prefieres chatear de inmediato?</h3>
-                    <p style={{ fontSize: '0.85rem', color: '#86EFAC', margin: '0.2rem 0 0' }}>Respuesta rápida del Sensei de guardia</p>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        color: '#86EFAC',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        marginBottom: '0.2rem',
+                      }}
+                    >
+                      Canal Preferido
+                    </span>
+                    <h2 style={{ fontSize: '1.5rem', color: '#FFFFFF', margin: 0, fontWeight: 800 }}>
+                      Chatear de Inmediato
+                    </h2>
                   </div>
                 </div>
 
-                <p style={{ fontSize: '0.9rem', color: '#CBD5E1', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-                  Escríbenos directamente por WhatsApp para consultar dudas inmediatas sobre tarifas, uniformes o disponibilidad del día.
+                <p style={{ fontSize: '1rem', color: '#CBD5E1', lineHeight: 1.7, marginBottom: '1.5rem' }}>
+                  Escríbenos directamente a nuestro WhatsApp oficial para resolver cualquier duda al instante sobre horarios, categorías, uniformes o requisitos de ingreso con el Sensei de guardia.
                 </p>
 
+                <div
+                  style={{
+                    padding: '1.25rem',
+                    backgroundColor: 'rgba(37, 211, 102, 0.08)',
+                    border: '1px solid rgba(37, 211, 102, 0.2)',
+                    borderRadius: '10px',
+                    marginBottom: '2rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22C55E', display: 'inline-block' }} />
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#86EFAC' }}>
+                      Respuesta Rápida y Personalizada
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: '#A7F3D0', margin: 0, lineHeight: 1.5 }}>
+                    Atención directa a practicantes, padres de familia y competidores.
+                  </p>
+                </div>
+              </div>
+
+              <a
+                href={`https://wa.me/525512345678?text=${whatsappMessage}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.75rem',
+                  width: '100%',
+                  padding: '1.1rem 1.75rem',
+                  backgroundColor: '#25D366',
+                  color: '#062B16',
+                  borderRadius: '8px',
+                  fontSize: '1.05rem',
+                  fontWeight: 800,
+                  textDecoration: 'none',
+                  boxShadow: '0 8px 25px rgba(37, 211, 102, 0.35)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <MessageSquare size={22} />
+                <span>Abrir WhatsApp & Chatear</span>
+              </a>
+            </div>
+
+            {/* Tarjeta de Información del Dojo */}
+            <div
+              className="glass-panel"
+              style={{
+                padding: 'clamp(2rem, 5vw, 2.75rem)',
+                borderRadius: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div>
+                <h2 style={{ fontSize: '1.5rem', color: '#F7F8FA', marginBottom: '1.5rem', fontWeight: 800 }}>
+                  Información del Dojo
+                </h2>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', fontSize: '0.92rem', color: '#9DA3B4' }}>
+                  {/* Dirección */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+                    <MapPin size={22} color="#E55353" style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <div>
+                      <strong style={{ color: '#F7F8FA', display: 'block', fontSize: '0.95rem' }}>
+                        Dirección Central
+                      </strong>
+                      <span style={{ color: '#CBD5E1' }}>Av. de las Artes Marciales #108, Col. Tradición, Zona Centro</span>
+                      <p style={{ fontSize: '0.8rem', color: '#687187', margin: '0.25rem 0 0' }}>
+                        Estacionamiento privado para alumnos y familiares.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Horario */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+                    <Clock size={22} color="#8CA6F8" style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <div>
+                      <strong style={{ color: '#F7F8FA', display: 'block', fontSize: '0.95rem' }}>
+                        Horario de Atención en Recepción
+                      </strong>
+                      <span style={{ color: '#CBD5E1' }}>Lunes a Viernes: 15:30 - 21:30 hrs</span>
+                      <br />
+                      <span style={{ color: '#CBD5E1' }}>Sábados: 08:00 - 13:30 hrs</span>
+                    </div>
+                  </div>
+
+                  {/* Teléfono */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                    <Phone size={22} color="#48BB78" style={{ flexShrink: 0 }} />
+                    <div>
+                      <strong style={{ color: '#F7F8FA', display: 'block', fontSize: '0.95rem' }}>
+                        Línea Telefónica Directa
+                      </strong>
+                      <span style={{ color: '#CBD5E1' }}>+52 (55) 1234-5678</span>
+                    </div>
+                  </div>
+
+                  {/* Correo */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                    <Mail size={22} color="#ECC94B" style={{ flexShrink: 0 }} />
+                    <div>
+                      <strong style={{ color: '#F7F8FA', display: 'block', fontSize: '0.95rem' }}>
+                        Correo Electrónico
+                      </strong>
+                      <span style={{ color: '#CBD5E1' }}>contacto@dojoyingyang.com</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recuadro Tatami y Google Maps */}
+              <div
+                style={{
+                  marginTop: '2rem',
+                  padding: '1.35rem',
+                  backgroundColor: '#161922',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '1rem',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <div>
+                  <p style={{ fontSize: '0.88rem', fontWeight: 700, color: '#F7F8FA', margin: 0 }}>
+                    Tatami Principal Dojo Ying Yang
+                  </p>
+                  <p style={{ fontSize: '0.78rem', color: '#9FA6B8', margin: '0.2rem 0 0' }}>
+                    180 m² de tatami reglamentario y zona de entrenamiento
+                  </p>
+                </div>
                 <a
-                  href={`https://wa.me/525512345678?text=${whatsappMessage}`}
+                  href="https://maps.google.com"
                   target="_blank"
                   rel="noreferrer"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.65rem',
-                    width: '100%',
-                    padding: '0.85rem 1.5rem',
-                    backgroundColor: '#25D366',
-                    color: '#062B16',
-                    borderRadius: '6px',
-                    fontSize: '0.95rem',
+                    gap: '0.4rem',
+                    fontSize: '0.82rem',
                     fontWeight: 700,
+                    color: '#8CA6F8',
                     textDecoration: 'none',
-                    transition: 'all 0.2s',
+                    padding: '0.4rem 0.8rem',
+                    backgroundColor: 'rgba(140, 166, 248, 0.1)',
+                    border: '1px solid rgba(140, 166, 248, 0.25)',
+                    borderRadius: '6px',
                   }}
                 >
-                  <span>Chatear por WhatsApp Oficial</span>
+                  <span>Google Maps</span>
+                  <ExternalLink size={14} />
                 </a>
-              </div>
-
-              {/* Tarjeta de Ubicación e Instalaciones */}
-              <div className="glass-panel" style={{ padding: '2rem', borderRadius: '12px' }}>
-                <h3 style={{ fontSize: '1.25rem', color: '#F7F8FA', marginBottom: '1.25rem' }}>
-                  Información del Dojo
-                </h3>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '0.9rem', color: '#9DA3B4' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                    <MapPin size={20} color="#E55353" style={{ flexShrink: 0, marginTop: '2px' }} />
-                    <div>
-                      <strong style={{ color: '#F7F8FA', display: 'block' }}>Dirección Central</strong>
-                      <span>Av. de las Artes Marciales #108, Col. Tradición, Zona Centro</span>
-                      <p style={{ fontSize: '0.78rem', color: '#687187', margin: '0.2rem 0 0' }}>Estacionamiento privado para alumnos y familiares.</p>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                    <Clock size={20} color="#8CA6F8" style={{ flexShrink: 0, marginTop: '2px' }} />
-                    <div>
-                      <strong style={{ color: '#F7F8FA', display: 'block' }}>Horario de Atención en Recepción</strong>
-                      <span>Lunes a Viernes: 15:30 - 21:30 hrs</span>
-                      <br />
-                      <span>Sábados: 08:00 - 13:30 hrs</span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Phone size={20} color="#48BB78" style={{ flexShrink: 0 }} />
-                    <div>
-                      <strong style={{ color: '#F7F8FA', display: 'block' }}>Línea Telefónica Directa</strong>
-                      <span>+52 (55) 1234-5678</span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Mail size={20} color="#ECC94B" style={{ flexShrink: 0 }} />
-                    <div>
-                      <strong style={{ color: '#F7F8FA', display: 'block' }}>Correo Electrónico</strong>
-                      <span>contacto@dojoyingyang.com</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mapa Representativo / Visual del Dojo */}
-                <div
-                  style={{
-                    marginTop: '1.75rem',
-                    padding: '1.5rem',
-                    backgroundColor: '#161922',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '8px',
-                    textAlign: 'center',
-                  }}
-                >
-                  <MapPin size={32} color="#E55353" style={{ margin: '0 auto 0.5rem' }} />
-                  <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#F7F8FA', margin: 0 }}>
-                    Tatami Principal Dojo Ying Yang
-                  </p>
-                  <p style={{ fontSize: '0.78rem', color: '#9FA6B8', margin: '0.2rem 0 1rem' }}>
-                    180 m² de tatami reglamentario y zona de preparación física
-                  </p>
-                  <a
-                    href="https://maps.google.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      color: '#8CA6F8',
-                      textDecoration: 'none',
-                    }}
-                  >
-                    Abrir en Google Maps →
-                  </a>
-                </div>
               </div>
             </div>
           </div>
