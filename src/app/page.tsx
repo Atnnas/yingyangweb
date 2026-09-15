@@ -166,23 +166,6 @@ export default function HomePage() {
                 }}
               >
                 {/* Kanji de Fondo en Marca de Agua */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    fontSize: '14rem',
-                    fontWeight: 900,
-                    color: 'rgba(255, 255, 255, 0.02)',
-                    userSelect: 'none',
-                    pointerEvents: 'none',
-                    fontFamily: 'serif',
-                  }}
-                >
-                  空手
-                </div>
-
                 {/* Símbolo Central: Logo Oficial */}
                 <div
                   style={{
@@ -212,7 +195,7 @@ export default function HomePage() {
                     color: '#F7F8FA',
                   }}
                 >
-                  陰陽空手道場
+                  DOJO YING YANG
                 </h3>
                 <p style={{ fontSize: '0.88rem', color: '#9FA6B8', margin: '0 auto 1.5rem', maxWidth: '360px', lineHeight: 1.5 }}>
                   El arte de vencer sin luchar y la firmeza del golpe que nace de la calma interior.
@@ -231,7 +214,7 @@ export default function HomePage() {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#8CA6F8', fontWeight: 700, fontSize: '0.85rem' }}>
                       <Droplets size={16} />
-                      <span>YING (陰)</span>
+                      <span>YING</span>
                     </div>
                     <p style={{ fontSize: '0.75rem', color: '#9FA6B8', margin: '0.3rem 0 0' }}>
                       Técnica, defensa, fluidez, concentración y autocontrol.
@@ -249,7 +232,7 @@ export default function HomePage() {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#FF8A8A', fontWeight: 700, fontSize: '0.85rem' }}>
                       <Flame size={16} />
-                      <span>YANG (陽)</span>
+                      <span>YANG</span>
                     </div>
                     <p style={{ fontSize: '0.75rem', color: '#9FA6B8', margin: '0.3rem 0 0' }}>
                       Impacto, potencia, espíritu indomable y resolución.

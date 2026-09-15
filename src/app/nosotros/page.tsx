@@ -16,10 +16,9 @@ export default function NosotrosPage() {
       title: 'Director Técnico & Fundador',
       dan: 'Cinturón Negro 6° Dan',
       experience: '35+ Años de Práctica',
-      specialty: 'Katas Superiores, Filosofía Bushido & Bunkai',
+      specialty: 'Katas Superiores, Filosofía & Bunkai',
       badgeColor: '#111827',
-      kanji: '師範',
-      bio: 'Formado directamente en Okinawa y Japón. Ha dedicado su vida a preservar la esencia marcial original, formando a más de 38 cinturones negros y jueces internacionales.'
+      bio: 'Formado directamente en artes marciales tradicionales. Ha dedicado su vida a preservar la esencia marcial original, formando a más de 38 cinturones negros y jueces internacionales.'
     },
     {
       name: 'Sensei Roberto Morales',
@@ -28,7 +27,6 @@ export default function NosotrosPage() {
       experience: '18 Años de Práctica',
       specialty: 'Kumite Deportivo WKF & Preparación Atlética',
       badgeColor: '#B83131',
-      kanji: '先生',
       bio: 'Ex-competidor internacional y medallista Panamericano. Combina la ciencia del entrenamiento deportivo contemporáneo con la contundencia del karate de combate.'
     },
     {
@@ -38,31 +36,30 @@ export default function NosotrosPage() {
       experience: '14 Años de Práctica',
       specialty: 'Psicomotricidad Infantil & Arbitraje Federado',
       badgeColor: '#394F9A',
-      kanji: '指導員',
       bio: 'Especialista en pedagogía deportiva y desarrollo infantil. Guía a los más pequeños en la incorporación de hábitos de orden, disciplina y seguridad en sí mismos.'
     }
   ];
 
   const dojoRules = [
     {
+      num: '01',
       title: 'Saludo de Respeto (Rei)',
-      desc: 'Saludar con una reverencia respetuosa al entrar y salir del tatami, reconociendo el espacio sagrado de superación.',
-      kanji: '礼'
+      desc: 'Saludar con una reverencia respetuosa al entrar y salir del tatami, reconociendo el espacio sagrado de superación.'
     },
     {
+      num: '02',
       title: 'Cuidado del Karategi',
-      desc: 'El uniforme blanco debe estar siempre limpio, presentable y con el cinturón correctamente atado como reflejo de orden interno.',
-      kanji: '道着'
+      desc: 'El uniforme blanco debe estar siempre limpio, presentable y con el cinturón correctamente atado como reflejo de orden interno.'
     },
     {
+      num: '03',
       title: 'Puntualidad & Presencia',
-      desc: 'Llegar 10 minutos antes del inicio de la sesión para preparar el cuerpo y despejar la mente del estrés exterior.',
-      kanji: '時間'
+      desc: 'Llegar 10 minutos antes del inicio de la sesión para preparar el cuerpo y despejar la mente del estrés exterior.'
     },
     {
+      num: '04',
       title: 'Vínculo Senpai - Kohai',
-      desc: 'Los alumnos avanzados guían y cuidan con paciencia a los principiantes; los novatos responden con escucha y humildad.',
-      kanji: '先輩'
+      desc: 'Los alumnos avanzados guían y cuidan con paciencia a los principiantes; los novatos responden con escucha y humildad.'
     }
   ];
 
@@ -270,16 +267,23 @@ export default function NosotrosPage() {
                     >
                       <UserCheck size={26} />
                     </div>
-                    <span
+                    <div
                       style={{
-                        fontSize: '1.75rem',
-                        fontWeight: 900,
-                        color: 'rgba(255, 255, 255, 0.15)',
-                        fontFamily: 'serif',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        padding: '0.25rem 0.65rem',
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '20px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: '#F7F8FA',
                       }}
                     >
-                      {prof.kanji}
-                    </span>
+                      <Award size={14} color="#ECC94B" />
+                      <span>{prof.dan.split(' ')[2] || 'DAN'}</span>
+                    </div>
                   </div>
 
                   <h3 style={{ fontSize: '1.3rem', color: '#F7F8FA', marginBottom: '0.25rem' }}>
@@ -321,7 +325,7 @@ export default function NosotrosPage() {
               Protocolo en el Tatami
             </span>
             <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', marginBottom: '1rem' }}>
-              Reigi: Código de Etiqueta
+              Código de Etiqueta & Respeto
             </h2>
             <p style={{ fontSize: '1rem', color: '#9DA3B4' }}>
               El karate comienza con el respeto y concluye con el respeto. Estas son las normas que rigen la vida en nuestro dojo:
@@ -350,8 +354,8 @@ export default function NosotrosPage() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h4 style={{ fontSize: '1.1rem', color: '#F7F8FA', margin: 0 }}>{rule.title}</h4>
-                  <span style={{ fontSize: '1.4rem', color: 'rgba(255, 255, 255, 0.2)', fontFamily: 'serif' }}>
-                    {rule.kanji}
+                  <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'rgba(140, 166, 248, 0.5)', letterSpacing: '0.05em' }}>
+                    {rule.num}
                   </span>
                 </div>
                 <p style={{ fontSize: '0.88rem', color: '#9DA3B4', lineHeight: 1.6, margin: 0 }}>

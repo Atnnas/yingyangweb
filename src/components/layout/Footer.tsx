@@ -204,7 +204,7 @@ export default function Footer() {
           {/* Columna 3: Principios del Dojo (Dojo Kun) */}
           <div>
             <h4 style={{ fontSize: '0.9rem', color: '#F7F8FA', marginBottom: '1.25rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-              Dojo Kun (道場訓)
+              Dojo Kun (Principios)
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.82rem', color: '#9DA3B4' }}>
               <p style={{ margin: 0 }}>• Perfeccionar el carácter personal.</p>
