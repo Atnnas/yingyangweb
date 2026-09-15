@@ -2,17 +2,20 @@ import NextAuth, { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import { getDatabase } from '@/lib/mongodb';
 
-// Detección automática de URL para Vercel y localhost
+// Detección y sanitización automática de URL para Vercel
 const getNextAuthUrl = () => {
-  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return 'http://localhost:3000';
+  const rawUrl = process.env.NEXTAUTH_URL;
+  // Si no empieza con http/https o parece una clave secreta, descartarlo
+  if (rawUrl && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) && !rawUrl.includes('secret')) {
+    return rawUrl;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return 'https://yingyangweb.vercel.app';
 };
 
-// Asegurar que NEXTAUTH_URL esté seteado para NextAuth
-if (!process.env.NEXTAUTH_URL) {
-  process.env.NEXTAUTH_URL = getNextAuthUrl();
-}
+process.env.NEXTAUTH_URL = getNextAuthUrl();
 
 export const authOptions: NextAuthOptions = {
   providers: [
