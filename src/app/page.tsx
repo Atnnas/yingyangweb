@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { ChevronRight, Users, Droplets, Flame } from 'lucide-react';
+import SponsorsTicker from '@/components/sponsors/SponsorsTicker';
 
 export default function HomePage() {
   const { openAuthModal } = useAuth();
@@ -113,32 +114,8 @@ export default function HomePage() {
                 </button>
               </div>
 
-              {/* Badges Rápidos / Trayectoria */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 'clamp(1.2rem, 3vw, 2.5rem)',
-                  marginTop: '2.5rem',
-                  paddingTop: '2rem',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-                }}
-              >
-                <div>
-                  <p style={{ fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 900, color: '#F7F8FA', margin: 0, lineHeight: 1 }}>+25</p>
-                  <p style={{ fontSize: '0.78rem', color: '#9FA6B8', margin: '0.35rem 0 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Años de Trayectoria</p>
-                </div>
-                <div style={{ width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
-                <div>
-                  <p style={{ fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 900, color: '#8CA6F8', margin: 0, lineHeight: 1 }}>38+</p>
-                  <p style={{ fontSize: '0.78rem', color: '#9FA6B8', margin: '0.35rem 0 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cinturones Negros</p>
-                </div>
-                <div style={{ width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
-                <div>
-                  <p style={{ fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 900, color: '#FF8A8A', margin: 0, lineHeight: 1 }}>140+</p>
-                  <p style={{ fontSize: '0.78rem', color: '#9FA6B8', margin: '0.35rem 0 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Alumnos Activos</p>
-                </div>
-              </div>
+              {/* Cintillo Animado de Patrocinadores (Derecha a Izquierda) */}
+              <SponsorsTicker />
             </div>
 
             {/* Columna Derecha: Tarjeta Glassmorphic con el Logo Oficial */}
