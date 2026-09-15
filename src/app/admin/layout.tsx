@@ -61,12 +61,17 @@ export default function AdminLayout({
     );
   }
 
-  // 2. Verificación de permisos de Administrador o Super Administrador
+  // 2. Verificación estricta de permisos: ÚNICAMENTE rol de administrator (el más elevado)
   const isSuperAdmin =
     user?.email?.toLowerCase().includes('david.artavia.rodriguez@gmail.com') ||
     user?.email?.toLowerCase().includes('davidartaviarodriguez@gmail.com');
 
-  if (!user || (user.role !== 'administrator' && !isSuperAdmin)) {
+  const isAuthorizedAdmin = !!user && (
+    (user.role === 'administrator' && user.status === 'active') ||
+    isSuperAdmin
+  );
+
+  if (!isAuthorizedAdmin) {
     return (
       <div
         style={{
@@ -83,11 +88,11 @@ export default function AdminLayout({
         <div
           className="card-sumi"
           style={{
-            maxWidth: '520px',
+            maxWidth: '540px',
             width: '100%',
             textAlign: 'center',
             padding: '3rem 2.2rem',
-            border: '1px solid rgba(142, 35, 35, 0.3)',
+            border: '1px solid rgba(142, 35, 35, 0.35)',
             boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
           }}
         >
@@ -123,13 +128,13 @@ export default function AdminLayout({
 
           <h1
             style={{
-              fontSize: '1.8rem',
+              fontSize: '1.75rem',
               fontWeight: 800,
               color: '#F7F8FA',
               marginBottom: '1rem',
             }}
           >
-            Acceso Exclusivo de Administrador
+            Acceso Exclusivo con Rol Administrator
           </h1>
 
           <p
@@ -140,18 +145,14 @@ export default function AdminLayout({
               marginBottom: '2rem',
             }}
           >
-            Esta sección es exclusiva para la administración del Dojo Ying Yang.
+            La sección administrativa y todas sus subrutas son accesibles <strong>única y exclusivamente</strong> para cuentas con el rol de <strong style={{ color: '#F7F8FA' }}>administrator</strong> (el rol más elevado del Dojo Ying Yang).
             {user ? (
-              <span>
-                {' '}
-                Has iniciado sesión como{' '}
-                <strong style={{ color: '#F7F8FA' }}>{user.email}</strong>, pero tu
-                cuenta no posee el rol de <strong>administrator</strong>.
+              <span style={{ display: 'block', marginTop: '0.75rem', padding: '0.65rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
+                Has iniciado sesión como <strong style={{ color: '#F7F8FA' }}>{user.email}</strong>, pero tu rol actual es <strong style={{ color: '#E55353' }}>{user.role}</strong> {user.status !== 'active' ? `(estado: ${user.status})` : ''}. No posees permisos de administrador activo.
               </span>
             ) : (
-              <span>
-                {' '}
-                Debes iniciar sesión con una cuenta de administrador autorizada.
+              <span style={{ display: 'block', marginTop: '0.75rem' }}>
+                Debes iniciar sesión con una cuenta autorizada que posea el rol de <strong>administrator</strong>.
               </span>
             )}
           </p>

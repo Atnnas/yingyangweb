@@ -13,9 +13,14 @@ export default function Header() {
   const pathname = usePathname();
   const { user, openAuthModal, logout } = useAuth();
 
-  const isAdmin = user?.role === 'administrator' || 
+  const isSuperAdmin =
     user?.email?.toLowerCase().includes('david.artavia.rodriguez@gmail.com') ||
     user?.email?.toLowerCase().includes('davidartaviarodriguez@gmail.com');
+
+  const isAdmin = !!user && (
+    (user.role === 'administrator' && user.status === 'active') ||
+    isSuperAdmin
+  );
 
   const navLinks = [
     { name: 'Inicio', href: '/' },

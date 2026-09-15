@@ -1,15 +1,11 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth } from '@/context/AuthContext';
-import { ChevronRight, Users, Droplets, Flame } from 'lucide-react';
+import { Droplets, Flame } from 'lucide-react';
 import SponsorsTicker from '@/components/sponsors/SponsorsTicker';
 
 export default function HomePage() {
-  const { openAuthModal } = useAuth();
-
   return (
     <div style={{ position: 'relative', overflow: 'hidden', minHeight: 'calc(100vh - 76px)', display: 'flex', alignItems: 'center' }}>
       {/* ================= HERO SECTION (PANTALLA COMPLETA) ================= */}
@@ -35,7 +31,7 @@ export default function HomePage() {
               width: '100%',
             }}
           >
-            {/* Columna Izquierda: Texto y Acciones */}
+            {/* Columna Izquierda: Texto y Pasarela de Patrocinadores */}
             <div style={{ maxWidth: '780px' }}>
               <div
                 style={{
@@ -44,77 +40,68 @@ export default function HomePage() {
                   gap: '0.65rem',
                   padding: '0.45rem 1rem',
                   borderRadius: '30px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color: '#CBD5E1',
-                  marginBottom: '1.5rem',
+                  backgroundColor: 'rgba(35, 52, 107, 0.25)',
+                  border: '1px solid rgba(140, 166, 248, 0.3)',
+                  marginBottom: '1.25rem',
                 }}
               >
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#E55353' }} />
-                <span>Dojo Tradicional & Deportivo • Linaje Marcial</span>
+                <div
+                  style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: '#8CA6F8',
+                    boxShadow: '0 0 8px #8CA6F8',
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: '#8CA6F8',
+                  }}
+                >
+                  Dojo Tradicional & Kumite Deportivo
+                </span>
               </div>
 
               <h1
                 style={{
-                  fontSize: 'clamp(2.4rem, 5.2vw, 4.5rem)',
-                  lineHeight: 1.06,
+                  fontSize: 'clamp(2.5rem, 5vw, 3.8rem)',
                   fontWeight: 900,
-                  letterSpacing: '0.02em',
-                  marginBottom: '1.5rem',
+                  lineHeight: 1.08,
+                  letterSpacing: '-0.02em',
+                  marginBottom: '1.25rem',
+                  color: '#F7F8FA',
                 }}
               >
-                DISCIPLINA, PODER <br />
+                Camino a la Excelencia Marcial en{' '}
                 <span
                   style={{
-                    background: 'linear-gradient(90deg, #8CA6F8 0%, #FFFFFF 50%, #FF8A8A 100%)',
+                    background: 'linear-gradient(135deg, #8CA6F8 0%, #E55353 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                   }}
                 >
-                  Y EQUILIBRIO
+                  Ying Yang
                 </span>
               </h1>
 
               <p
                 style={{
-                  fontSize: 'clamp(1.05rem, 1.8vw, 1.25rem)',
-                  lineHeight: 1.7,
-                  color: '#9DA3B4',
-                  maxWidth: '680px',
-                  marginBottom: '2.25rem',
+                  fontSize: 'clamp(1rem, 1.6vw, 1.15rem)',
+                  color: '#9FA6B8',
+                  lineHeight: 1.65,
+                  marginBottom: '1.75rem',
+                  maxWidth: '640px',
                 }}
               >
                 Forjamos mente, cuerpo y espíritu a través del Karate Do. Descubre la armonía entre la serenidad reflexiva del <strong>Ying</strong> y la fuerza contundente del <strong>Yang</strong>.
               </p>
 
-              {/* Botones de Acción */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '1rem',
-                  alignItems: 'center',
-                }}
-              >
-                <Link href="/contacto" className="btn-martial-primary">
-                  <span>Clase Muestra Sin Costo</span>
-                  <ChevronRight size={18} />
-                </Link>
-
-                <button
-                  onClick={openAuthModal}
-                  className="btn-martial-secondary"
-                >
-                  <Users size={18} />
-                  <span>Portal Alumnos</span>
-                </button>
-              </div>
-
-              {/* Cintillo Animado de Patrocinadores (Derecha a Izquierda) */}
+              {/* Cintillo / Pasarela de Patrocinadores */}
               <SponsorsTicker />
             </div>
 
