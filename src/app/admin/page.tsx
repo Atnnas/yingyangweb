@@ -21,16 +21,47 @@ import {
   X,
   UserCheck,
   Award,
+  Users,
+  CalendarCheck,
+  Calendar,
+  Check,
+  UserX,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
 } from 'lucide-react';
+
+interface AttendanceRecord {
+  id: string;
+  userId?: string;
+  userEmail: string;
+  userName: string;
+  date: string;
+  classSession: string;
+  status: 'present' | 'absent' | 'justified';
+  markedAt?: string;
+}
 
 export default function AdminPage() {
   const { user, isLoading: isAuthLoading, loginWithGoogle } = useAuth();
 
+  // Control de Tabs Izquierdo: 'usuarios' | 'asistencia'
+  const [activeTab, setActiveTab] = useState<'usuarios' | 'asistencia'>('usuarios');
+
+  // Estado de Usuarios
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | UserStatus>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | UserRole>('all');
+
+  // Estado de Asistencia
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [selectedSession, setSelectedSession] = useState<string>('general');
+  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, 'present' | 'absent' | 'justified'>>({});
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const [attendanceBeltFilter, setAttendanceBeltFilter] = useState<string>('all');
 
   // Modal para agregar usuario
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -43,6 +74,7 @@ export default function AdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Cargar usuarios
   const fetchUsers = useCallback(async () => {
     setLoadingUsers(true);
     try {
@@ -60,11 +92,37 @@ export default function AdminPage() {
     }
   }, []);
 
+  // Cargar registros de asistencia
+  const fetchAttendance = useCallback(async (date: string, classSession: string) => {
+    setLoadingAttendance(true);
+    try {
+      const res = await fetch(`/api/admin/attendance?date=${encodeURIComponent(date)}&classSession=${encodeURIComponent(classSession)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const map: Record<string, 'present' | 'absent' | 'justified'> = {};
+        (data.records || []).forEach((r: AttendanceRecord) => {
+          map[r.userEmail.toLowerCase()] = r.status;
+        });
+        setAttendanceRecords(map);
+      }
+    } catch (err) {
+      console.error('Error cargando asistencia:', err);
+    } finally {
+      setLoadingAttendance(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (user && user.role === 'administrator') {
       fetchUsers();
     }
   }, [user, fetchUsers]);
+
+  useEffect(() => {
+    if (user && user.role === 'administrator' && activeTab === 'asistencia') {
+      fetchAttendance(selectedDate, selectedSession);
+    }
+  }, [user, activeTab, selectedDate, selectedSession, fetchAttendance]);
 
   // Actualizar rol o estado de un usuario
   const handleUpdateUser = async (id: string, email: string, updates: Partial<User>) => {
@@ -86,6 +144,53 @@ export default function AdminPage() {
       setActionMessage({ type: 'error', text: 'Error de conexión' });
     }
     setTimeout(() => setActionMessage(null), 4000);
+  };
+
+  // Marcar asistencia de un estudiante
+  const handleMarkAttendance = async (student: User, status: 'present' | 'absent' | 'justified') => {
+    const emailKey = student.email.toLowerCase();
+    // Actualización optimista en UI
+    setAttendanceRecords((prev) => ({ ...prev, [emailKey]: status }));
+
+    try {
+      const res = await fetch('/api/admin/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: student.id,
+          userEmail: student.email,
+          userName: student.name,
+          date: selectedDate,
+          classSession: selectedSession,
+          status,
+        }),
+      });
+      if (res.ok) {
+        // Refrescar conteo de clases en usuarios
+        fetchUsers();
+      } else {
+        console.error('Error al guardar asistencia');
+      }
+    } catch (err) {
+      console.error('Error de red al marcar asistencia:', err);
+    }
+  };
+
+  // Marcar todos presentes
+  const handleMarkAllPresent = async () => {
+    const activeStudents = users.filter((u) => u.status === 'active');
+    for (const student of activeStudents) {
+      await handleMarkAttendance(student, 'present');
+    }
+    setActionMessage({ type: 'success', text: 'Todos los alumnos marcados como Presentes' });
+    setTimeout(() => setActionMessage(null), 3000);
+  };
+
+  // Cambiar fecha
+  const changeDateByDays = (days: number) => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + days);
+    setSelectedDate(d.toISOString().split('T')[0]);
   };
 
   // Eliminar usuario
@@ -160,7 +265,7 @@ export default function AdminPage() {
     );
   }
 
-  // Si el usuario no tiene rol administrator
+  // Verificación de Super Admin o Administrator
   const isSuperAdmin = user?.email?.toLowerCase().includes('david.artavia.rodriguez@gmail.com') ||
     user?.email?.toLowerCase().includes('davidartaviarodriguez@gmail.com');
 
@@ -265,7 +370,7 @@ export default function AdminPage() {
     );
   }
 
-  // Filtrado en memoria de usuarios
+  // Filtrado de usuarios para tab "Usuarios"
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -275,14 +380,178 @@ export default function AdminPage() {
     return matchesSearch && matchesStatus && matchesRole;
   });
 
+  // Filtrado de alumnos para tab "Asistencia"
+  const attendanceStudents = users.filter((u) => {
+    const isStudentOrActive = u.status === 'active';
+    const matchesBelt = attendanceBeltFilter === 'all' || u.belt === attendanceBeltFilter;
+    return isStudentOrActive && matchesBelt;
+  });
+
   const totalUsers = users.length;
   const pendingUsersCount = users.filter((u) => u.status === 'pending').length;
   const adminUsersCount = users.filter((u) => u.role === 'administrator').length;
   const activeStudentsCount = users.filter((u) => u.status === 'active' && u.role !== 'administrator').length;
 
+  // Conteo de asistencia del día
+  const presentCountToday = Object.values(attendanceRecords).filter((s) => s === 'present').length;
+  const absentCountToday = Object.values(attendanceRecords).filter((s) => s === 'absent').length;
+  const justifiedCountToday = Object.values(attendanceRecords).filter((s) => s === 'justified').length;
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0B0C10', padding: '2.5rem 1rem 5rem' }}>
-      <div className="container-dojo">
+    <div style={{ minHeight: '100vh', backgroundColor: '#0B0C10', display: 'flex' }}>
+      {/* ============================================================ */}
+      {/* SIDEBAR / CONTROL DE TABS IZQUIERDO                          */}
+      {/* ============================================================ */}
+      <aside
+        style={{
+          width: '260px',
+          backgroundColor: '#0F121A',
+          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+          display: 'flex',
+          flexDirection: 'column',
+          flexShrink: 0,
+          position: 'sticky',
+          top: '76px',
+          height: 'calc(100vh - 76px)',
+          padding: '1.5rem 1rem',
+          zIndex: 40,
+        }}
+      >
+        {/* Marca de Dojo Admin */}
+        <div style={{ paddingBottom: '1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <div
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                backgroundColor: '#23346B',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid rgba(140, 166, 248, 0.3)',
+              }}
+            >
+              <ShieldCheck size={18} color="#8CA6F8" />
+            </div>
+            <div>
+              <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#F7F8FA', letterSpacing: '0.04em' }}>
+                ADMIN DOJO
+              </span>
+              <span style={{ display: 'block', fontSize: '0.68rem', color: '#9FA6B8', textTransform: 'uppercase' }}>
+                Ying Yang System
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Navegación de Tabs */}
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+          {/* Tab 1: Usuarios */}
+          <button
+            onClick={() => setActiveTab('usuarios')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.85rem 1rem',
+              borderRadius: '8px',
+              border: activeTab === 'usuarios' ? '1px solid rgba(140, 166, 248, 0.4)' : '1px solid transparent',
+              backgroundColor: activeTab === 'usuarios' ? 'rgba(35, 52, 107, 0.45)' : 'transparent',
+              color: activeTab === 'usuarios' ? '#F7F8FA' : '#9FA6B8',
+              fontSize: '0.9rem',
+              fontWeight: activeTab === 'usuarios' ? 700 : 500,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              textAlign: 'left',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Users size={18} color={activeTab === 'usuarios' ? '#8CA6F8' : '#9FA6B8'} />
+              <span>Usuarios</span>
+            </div>
+            {pendingUsersCount > 0 && (
+              <span
+                style={{
+                  fontSize: '0.68rem',
+                  padding: '0.15rem 0.45rem',
+                  backgroundColor: 'rgba(234, 179, 8, 0.25)',
+                  border: '1px solid rgba(234, 179, 8, 0.5)',
+                  color: '#FACC15',
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                }}
+              >
+                {pendingUsersCount}
+              </span>
+            )}
+          </button>
+
+          {/* Tab 2: Asistencia */}
+          <button
+            onClick={() => setActiveTab('asistencia')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.85rem 1rem',
+              borderRadius: '8px',
+              border: activeTab === 'asistencia' ? '1px solid rgba(140, 166, 248, 0.4)' : '1px solid transparent',
+              backgroundColor: activeTab === 'asistencia' ? 'rgba(35, 52, 107, 0.45)' : 'transparent',
+              color: activeTab === 'asistencia' ? '#F7F8FA' : '#9FA6B8',
+              fontSize: '0.9rem',
+              fontWeight: activeTab === 'asistencia' ? 700 : 500,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              textAlign: 'left',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <CalendarCheck size={18} color={activeTab === 'asistencia' ? '#8CA6F8' : '#9FA6B8'} />
+              <span>Asistencia</span>
+            </div>
+            {presentCountToday > 0 && (
+              <span
+                style={{
+                  fontSize: '0.68rem',
+                  padding: '0.15rem 0.45rem',
+                  backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                  border: '1px solid rgba(34, 197, 94, 0.4)',
+                  color: '#4ADE80',
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                }}
+              >
+                {presentCountToday}
+              </span>
+            )}
+          </button>
+        </nav>
+
+        {/* Footer del Sidebar */}
+        <div style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <Link
+            href="/"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              color: '#9FA6B8',
+              textDecoration: 'none',
+              fontSize: '0.82rem',
+              padding: '0.5rem 0.6rem',
+              borderRadius: '6px',
+            }}
+          >
+            <ArrowLeft size={15} /> Volver a Página Web
+          </Link>
+        </div>
+      </aside>
+
+      {/* ============================================================ */}
+      {/* CONTENIDO PRINCIPAL SEGÚN EL TAB SELECCIONADO               */}
+      {/* ============================================================ */}
+      <main style={{ flex: 1, padding: '2.5rem 2rem 5rem', overflowY: 'auto' }}>
         {/* Notificación de acciones */}
         {actionMessage && (
           <div
@@ -309,531 +578,876 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Encabezado Superior */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '1.5rem',
-            marginBottom: '2.5rem',
-            paddingBottom: '1.5rem',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          }}
-        >
+        {/* ------------------------------------------------------------ */}
+        {/* VISTA 1: USUARIOS                                            */}
+        {/* ------------------------------------------------------------ */}
+        {activeTab === 'usuarios' && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.4rem' }}>
-              <span
+            {/* Encabezado Superior */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1.5rem',
+                marginBottom: '2rem',
+                paddingBottom: '1.5rem',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.4rem' }}>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      padding: '0.2rem 0.6rem',
+                      backgroundColor: 'rgba(35, 52, 107, 0.3)',
+                      border: '1px solid rgba(140, 166, 248, 0.4)',
+                      borderRadius: '20px',
+                      color: '#8CA6F8',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    <Users size={14} /> Módulo de Usuarios
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: '#9FA6B8' }}>Colección: <strong>Users</strong></span>
+                </div>
+
+                <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#F7F8FA', lineHeight: 1.15 }}>
+                  Gestión de Usuarios & Permisos
+                </h1>
+                <p style={{ color: '#9FA6B8', fontSize: '0.92rem', marginTop: '0.35rem' }}>
+                  Super-Admin: <strong style={{ color: '#F7F8FA' }}>{user.name}</strong> ({user.email})
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <button
+                  onClick={fetchUsers}
+                  disabled={loadingUsers}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.65rem 1rem',
+                    backgroundColor: '#161922',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '6px',
+                    color: '#F7F8FA',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  <RefreshCw size={15} className={loadingUsers ? 'spin-animation' : ''} />
+                  Actualizar
+                </button>
+
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="btn-martial-primary"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.65rem 1.25rem',
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  <UserPlus size={16} /> Agregar Usuario
+                </button>
+              </div>
+            </div>
+
+            {/* Métricas / KPIs */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '1.25rem',
+                marginBottom: '2rem',
+              }}
+            >
+              <div className="card-sumi" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '8px', backgroundColor: 'rgba(35, 52, 107, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <UserCheck size={22} color="#8CA6F8" />
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.75rem', color: '#9FA6B8', fontWeight: 600, textTransform: 'uppercase' }}>Total Usuarios</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#F7F8FA' }}>{totalUsers}</p>
+                </div>
+              </div>
+
+              <div
+                className="card-sumi"
                 style={{
-                  display: 'inline-flex',
+                  padding: '1.25rem',
+                  display: 'flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  padding: '0.2rem 0.6rem',
-                  backgroundColor: 'rgba(35, 52, 107, 0.3)',
-                  border: '1px solid rgba(140, 166, 248, 0.4)',
-                  borderRadius: '20px',
-                  color: '#8CA6F8',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
+                  gap: '1rem',
+                  border: pendingUsersCount > 0 ? '1px solid rgba(234, 179, 8, 0.4)' : undefined,
+                  backgroundColor: pendingUsersCount > 0 ? 'rgba(234, 179, 8, 0.05)' : undefined,
                 }}
               >
-                <ShieldCheck size={14} /> Panel Administrativo
-              </span>
-              <span style={{ fontSize: '0.8rem', color: '#9FA6B8' }}>Colección: <strong>Users</strong></span>
+                <div style={{ width: '44px', height: '44px', borderRadius: '8px', backgroundColor: 'rgba(234, 179, 8, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Clock size={22} color="#EAB308" />
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.75rem', color: '#EAB308', fontWeight: 700, textTransform: 'uppercase' }}>Pendientes</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#F7F8FA' }}>{pendingUsersCount}</p>
+                </div>
+              </div>
+
+              <div className="card-sumi" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '8px', backgroundColor: 'rgba(147, 51, 234, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Shield size={22} color="#C084FC" />
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.75rem', color: '#9FA6B8', fontWeight: 600, textTransform: 'uppercase' }}>Administradores</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#F7F8FA' }}>{adminUsersCount}</p>
+                </div>
+              </div>
+
+              <div className="card-sumi" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '8px', backgroundColor: 'rgba(142, 35, 35, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Award size={22} color="#E55353" />
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.75rem', color: '#9FA6B8', fontWeight: 600, textTransform: 'uppercase' }}>Alumnos Activos</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#F7F8FA' }}>{activeStudentsCount}</p>
+                </div>
+              </div>
             </div>
 
-            <h1 style={{ fontSize: '2.2rem', fontWeight: 900, color: '#F7F8FA', lineHeight: 1.15 }}>
-              Control de Usuarios & Permisos
-            </h1>
-            <p style={{ color: '#9FA6B8', fontSize: '0.95rem', marginTop: '0.4rem' }}>
-              Administrador en sesión: <strong style={{ color: '#F7F8FA' }}>{user.name}</strong> ({user.email})
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button
-              onClick={fetchUsers}
-              disabled={loadingUsers}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.65rem 1rem',
-                backgroundColor: '#161922',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: '6px',
-                color: '#F7F8FA',
-                cursor: 'pointer',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-              }}
-            >
-              <RefreshCw size={15} className={loadingUsers ? 'spin-animation' : ''} />
-              Actualizar
-            </button>
-
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="btn-martial-primary"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.65rem 1.25rem',
-                fontSize: '0.85rem',
-              }}
-            >
-              <UserPlus size={16} /> Agregar Usuario
-            </button>
-          </div>
-        </div>
-
-        {/* Métricas / KPIs */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '1.25rem',
-            marginBottom: '2.5rem',
-          }}
-        >
-          <div className="card-sumi" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {/* Barra de Filtros */}
             <div
+              className="card-sumi"
               style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(35, 52, 107, 0.25)',
+                padding: '1rem 1.25rem',
+                marginBottom: '1.5rem',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1rem',
               }}
             >
-              <UserCheck size={22} color="#8CA6F8" />
-            </div>
-            <div>
-              <p style={{ fontSize: '0.78rem', color: '#9FA6B8', fontWeight: 600, textTransform: 'uppercase' }}>Total Usuarios</p>
-              <p style={{ fontSize: '1.6rem', fontWeight: 900, color: '#F7F8FA' }}>{totalUsers}</p>
-            </div>
-          </div>
+              <div style={{ position: 'relative', flex: '1', minWidth: '220px' }}>
+                <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9FA6B8' }} />
+                <input
+                  type="text"
+                  placeholder="Buscar alumno o correo..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 1rem 0.6rem 2.4rem',
+                    backgroundColor: '#12151E',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '6px',
+                    color: '#F7F8FA',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                  }}
+                />
+              </div>
 
-          <div
-            className="card-sumi"
-            style={{
-              padding: '1.25rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              border: pendingUsersCount > 0 ? '1px solid rgba(234, 179, 8, 0.4)' : undefined,
-              backgroundColor: pendingUsersCount > 0 ? 'rgba(234, 179, 8, 0.05)' : undefined,
-            }}
-          >
-            <div
-              style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(234, 179, 8, 0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Clock size={22} color="#EAB308" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span style={{ fontSize: '0.8rem', color: '#9FA6B8', marginRight: '0.2rem' }}>Estado:</span>
+                {(['all', 'pending', 'active', 'blocked'] as const).map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setStatusFilter(st)}
+                    style={{
+                      padding: '0.4rem 0.75rem',
+                      borderRadius: '4px',
+                      border: '1px solid',
+                      borderColor: statusFilter === st ? '#8CA6F8' : 'rgba(255, 255, 255, 0.08)',
+                      backgroundColor: statusFilter === st ? 'rgba(35, 52, 107, 0.35)' : '#161922',
+                      color: statusFilter === st ? '#F7F8FA' : '#9FA6B8',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {st === 'all' ? 'Todos' : st === 'pending' ? 'Pendientes' : st === 'active' ? 'Activos' : 'Bloqueados'}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span style={{ fontSize: '0.8rem', color: '#9FA6B8', marginRight: '0.2rem' }}>Rol:</span>
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value as 'all' | UserRole)}
+                  style={{
+                    padding: '0.45rem 0.8rem',
+                    backgroundColor: '#12151E',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '6px',
+                    color: '#F7F8FA',
+                    fontSize: '0.82rem',
+                    outline: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="all">Todos los roles</option>
+                  <option value="administrator">administrator</option>
+                  <option value="editor">editor</option>
+                  <option value="viewer">viewer</option>
+                  <option value="student">student</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <p style={{ fontSize: '0.78rem', color: '#EAB308', fontWeight: 700, textTransform: 'uppercase' }}>
-                Pendientes de Aprobación
-              </p>
-              <p style={{ fontSize: '1.6rem', fontWeight: 900, color: '#F7F8FA' }}>{pendingUsersCount}</p>
-            </div>
-          </div>
 
-          <div className="card-sumi" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div
-              style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(147, 51, 234, 0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Shield size={22} color="#C084FC" />
-            </div>
-            <div>
-              <p style={{ fontSize: '0.78rem', color: '#9FA6B8', fontWeight: 600, textTransform: 'uppercase' }}>Administradores</p>
-              <p style={{ fontSize: '1.6rem', fontWeight: 900, color: '#F7F8FA' }}>{adminUsersCount}</p>
-            </div>
-          </div>
+            {/* Tabla de Usuarios */}
+            <div className="card-sumi" style={{ overflow: 'hidden', padding: 0 }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#141722', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <th style={{ padding: '0.9rem 1.25rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Usuario</th>
+                      <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Rol Asignado</th>
+                      <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Estado</th>
+                      <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Grado / Karate</th>
+                      <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Último Acceso</th>
+                      <th style={{ padding: '0.9rem 1.25rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', textAlign: 'right' }}>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ padding: '3rem 1rem', textAlign: 'center', color: '#9FA6B8' }}>
+                          {loadingUsers ? 'Cargando usuarios desde MongoDB Atlas...' : 'No se encontraron usuarios.'}
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredUsers.map((u) => {
+                        const isSelf = u.email.toLowerCase() === user.email.toLowerCase();
+                        const isMainAdmin = u.email.toLowerCase().includes('david.artavia.rodriguez@gmail.com') ||
+                          u.email.toLowerCase().includes('davidartaviarodriguez@gmail.com');
 
-          <div className="card-sumi" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div
-              style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(142, 35, 35, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Award size={22} color="#E55353" />
-            </div>
-            <div>
-              <p style={{ fontSize: '0.78rem', color: '#9FA6B8', fontWeight: 600, textTransform: 'uppercase' }}>Alumnos Activos</p>
-              <p style={{ fontSize: '1.6rem', fontWeight: 900, color: '#F7F8FA' }}>{activeStudentsCount}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Barra de Búsqueda y Filtros */}
-        <div
-          className="card-sumi"
-          style={{
-            padding: '1rem 1.25rem',
-            marginBottom: '1.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '1rem',
-          }}
-        >
-          {/* Buscador */}
-          <div style={{ position: 'relative', flex: '1', minWidth: '240px' }}>
-            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9FA6B8' }} />
-            <input
-              type="text"
-              placeholder="Buscar por nombre o correo..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.6rem 1rem 0.6rem 2.4rem',
-                backgroundColor: '#12151E',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: '6px',
-                color: '#F7F8FA',
-                fontSize: '0.85rem',
-                outline: 'none',
-              }}
-            />
-          </div>
-
-          {/* Filtro de Estado */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.8rem', color: '#9FA6B8', marginRight: '0.2rem' }}>Estado:</span>
-            {(['all', 'pending', 'active', 'blocked'] as const).map((st) => (
-              <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
-                style={{
-                  padding: '0.4rem 0.75rem',
-                  borderRadius: '4px',
-                  border: '1px solid',
-                  borderColor: statusFilter === st ? '#8CA6F8' : 'rgba(255, 255, 255, 0.08)',
-                  backgroundColor: statusFilter === st ? 'rgba(35, 52, 107, 0.35)' : '#161922',
-                  color: statusFilter === st ? '#F7F8FA' : '#9FA6B8',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  textTransform: 'capitalize',
-                }}
-              >
-                {st === 'all' ? 'Todos' : st === 'pending' ? 'Pendientes' : st === 'active' ? 'Activos' : 'Bloqueados'}
-              </button>
-            ))}
-          </div>
-
-          {/* Filtro de Rol */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.8rem', color: '#9FA6B8', marginRight: '0.2rem' }}>Rol:</span>
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as 'all' | UserRole)}
-              style={{
-                padding: '0.45rem 0.8rem',
-                backgroundColor: '#12151E',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: '6px',
-                color: '#F7F8FA',
-                fontSize: '0.82rem',
-                outline: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <option value="all">Todos los roles</option>
-              <option value="administrator">Administrator</option>
-              <option value="editor">Editor</option>
-              <option value="viewer">Viewer</option>
-              <option value="student">Student</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Tabla de Usuarios */}
-        <div className="card-sumi" style={{ overflow: 'hidden', padding: 0 }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#141722', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                  <th style={{ padding: '0.9rem 1.25rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Usuario</th>
-                  <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Rol Asignado</th>
-                  <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Estado</th>
-                  <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Grado / Karate</th>
-                  <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Último Acceso</th>
-                  <th style={{ padding: '0.9rem 1.25rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', textAlign: 'right' }}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ padding: '3rem 1rem', textAlign: 'center', color: '#9FA6B8' }}>
-                      {loadingUsers ? 'Cargando usuarios desde MongoDB Atlas...' : 'No se encontraron usuarios con los filtros seleccionados.'}
-                    </td>
-                  </tr>
-                ) : (
-                  filteredUsers.map((u) => {
-                    const isSelf = u.email.toLowerCase() === user.email.toLowerCase();
-                    const isMainAdmin = u.email.toLowerCase().includes('david.artavia.rodriguez@gmail.com') ||
-                      u.email.toLowerCase().includes('davidartaviarodriguez@gmail.com');
-
-                    return (
-                      <tr
-                        key={u.id || u.email}
-                        style={{
-                          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                          backgroundColor: u.status === 'pending' ? 'rgba(234, 179, 8, 0.03)' : 'transparent',
-                          transition: 'background-color 0.15s ease',
-                        }}
-                      >
-                        {/* Avatar y Usuario */}
-                        <td style={{ padding: '1rem 1.25rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                            <div
-                              style={{
-                                width: '38px',
-                                height: '38px',
-                                borderRadius: '50%',
-                                backgroundColor: isMainAdmin ? '#8E2323' : '#23346B',
-                                color: '#FFF',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 700,
-                                fontSize: '0.85rem',
-                                overflow: 'hidden',
-                                flexShrink: 0,
-                              }}
-                            >
-                              {u.avatar ? (
-                                <Image src={u.avatar} alt={u.name} width={38} height={38} style={{ objectFit: 'cover' }} />
-                              ) : (
-                                u.name.charAt(0).toUpperCase()
-                              )}
-                            </div>
-                            <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                <span style={{ fontWeight: 700, color: '#F7F8FA' }}>{u.name}</span>
-                                {isMainAdmin && (
-                                  <span
-                                    style={{
-                                      fontSize: '0.62rem',
-                                      padding: '0.1rem 0.4rem',
-                                      backgroundColor: 'rgba(142, 35, 35, 0.3)',
-                                      border: '1px solid rgba(184, 49, 49, 0.5)',
-                                      color: '#FF9E9E',
-                                      borderRadius: '4px',
-                                      fontWeight: 700,
-                                    }}
-                                  >
-                                    SUPER ADMIN
-                                  </span>
-                                )}
+                        return (
+                          <tr
+                            key={u.id || u.email}
+                            style={{
+                              borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                              backgroundColor: u.status === 'pending' ? 'rgba(234, 179, 8, 0.03)' : 'transparent',
+                            }}
+                          >
+                            <td style={{ padding: '1rem 1.25rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                                <div
+                                  style={{
+                                    width: '38px',
+                                    height: '38px',
+                                    borderRadius: '50%',
+                                    backgroundColor: isMainAdmin ? '#8E2323' : '#23346B',
+                                    color: '#FFF',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    overflow: 'hidden',
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {u.avatar ? (
+                                    <Image src={u.avatar} alt={u.name} width={38} height={38} unoptimized referrerPolicy="no-referrer" style={{ objectFit: 'cover' }} />
+                                  ) : (
+                                    u.name.charAt(0).toUpperCase()
+                                  )}
+                                </div>
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ fontWeight: 700, color: '#F7F8FA' }}>{u.name}</span>
+                                    {isMainAdmin && (
+                                      <span style={{ fontSize: '0.62rem', padding: '0.1rem 0.4rem', backgroundColor: 'rgba(142, 35, 35, 0.3)', border: '1px solid rgba(184, 49, 49, 0.5)', color: '#FF9E9E', borderRadius: '4px', fontWeight: 700 }}>
+                                        SUPER ADMIN
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span style={{ fontSize: '0.78rem', color: '#9FA6B8' }}>{u.email}</span>
+                                </div>
                               </div>
-                              <span style={{ fontSize: '0.78rem', color: '#9FA6B8', display: 'block' }}>{u.email}</span>
-                            </div>
-                          </div>
-                        </td>
+                            </td>
 
-                        {/* Rol */}
-                        <td style={{ padding: '1rem' }}>
-                          <select
-                            disabled={isMainAdmin}
-                            value={u.role}
-                            onChange={(e) => handleUpdateUser(u.id, u.email, { role: e.target.value as UserRole })}
-                            style={{
-                              padding: '0.35rem 0.6rem',
-                              backgroundColor: '#12151E',
-                              border: '1px solid rgba(255, 255, 255, 0.12)',
-                              borderRadius: '4px',
-                              color: u.role === 'administrator' ? '#C084FC' : u.role === 'editor' ? '#60A5FA' : u.role === 'student' ? '#F87171' : '#9FA6B8',
-                              fontWeight: 700,
-                              fontSize: '0.78rem',
-                              cursor: isMainAdmin ? 'not-allowed' : 'pointer',
-                              outline: 'none',
-                            }}
-                          >
-                            <option value="administrator">administrator</option>
-                            <option value="editor">editor</option>
-                            <option value="viewer">viewer</option>
-                            <option value="student">student</option>
-                          </select>
-                        </td>
+                            <td style={{ padding: '1rem' }}>
+                              <select
+                                disabled={isMainAdmin}
+                                value={u.role}
+                                onChange={(e) => handleUpdateUser(u.id, u.email, { role: e.target.value as UserRole })}
+                                style={{
+                                  padding: '0.35rem 0.6rem',
+                                  backgroundColor: '#12151E',
+                                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                                  borderRadius: '4px',
+                                  color: u.role === 'administrator' ? '#C084FC' : u.role === 'editor' ? '#60A5FA' : u.role === 'student' ? '#F87171' : '#9FA6B8',
+                                  fontWeight: 700,
+                                  fontSize: '0.78rem',
+                                  cursor: isMainAdmin ? 'not-allowed' : 'pointer',
+                                  outline: 'none',
+                                }}
+                              >
+                                <option value="administrator">administrator</option>
+                                <option value="editor">editor</option>
+                                <option value="viewer">viewer</option>
+                                <option value="student">student</option>
+                              </select>
+                            </td>
 
-                        {/* Estado */}
-                        <td style={{ padding: '1rem' }}>
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.3rem',
-                              padding: '0.25rem 0.6rem',
-                              borderRadius: '4px',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              textTransform: 'uppercase',
-                              backgroundColor:
-                                u.status === 'active'
-                                  ? 'rgba(34, 197, 94, 0.15)'
-                                  : u.status === 'pending'
-                                  ? 'rgba(234, 179, 8, 0.18)'
-                                  : 'rgba(239, 68, 68, 0.15)',
-                              color:
-                                u.status === 'active'
-                                  ? '#4ADE80'
-                                  : u.status === 'pending'
-                                  ? '#FACC15'
-                                  : '#F87171',
-                              border: `1px solid ${
-                                u.status === 'active'
-                                  ? 'rgba(34, 197, 94, 0.3)'
-                                  : u.status === 'pending'
-                                  ? 'rgba(234, 179, 8, 0.4)'
-                                  : 'rgba(239, 68, 68, 0.3)'
-                              }`,
-                            }}
-                          >
-                            {u.status === 'active' && <CheckCircle size={12} />}
-                            {u.status === 'pending' && <Clock size={12} />}
-                            {u.status === 'blocked' && <XCircle size={12} />}
-                            {u.status}
-                          </span>
-                        </td>
-
-                        {/* Karate / Cinturón */}
-                        <td style={{ padding: '1rem' }}>
-                          <span style={{ fontSize: '0.82rem', color: '#F7F8FA', fontWeight: 600, display: 'block' }}>
-                            {u.belt}
-                          </span>
-                          <span style={{ fontSize: '0.72rem', color: '#9FA6B8' }}>{u.kyuDan} • {u.classesAttended} clases</span>
-                        </td>
-
-                        {/* Último Acceso */}
-                        <td style={{ padding: '1rem', color: '#9FA6B8', fontSize: '0.78rem' }}>
-                          {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Sin registros'}
-                        </td>
-
-                        {/* Acciones */}
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                            {/* Botón rápido de aprobación */}
-                            {u.status === 'pending' && (
-                              <button
-                                onClick={() => handleUpdateUser(u.id, u.email, { status: 'active' })}
-                                title="Aprobar y habilitar acceso al Dojo"
+                            <td style={{ padding: '1rem' }}>
+                              <span
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '0.3rem',
-                                  padding: '0.35rem 0.75rem',
-                                  backgroundColor: '#15803D',
-                                  border: '1px solid #22C55E',
+                                  padding: '0.25rem 0.6rem',
                                   borderRadius: '4px',
-                                  color: '#FFF',
-                                  fontSize: '0.78rem',
+                                  fontSize: '0.75rem',
                                   fontWeight: 700,
-                                  cursor: 'pointer',
+                                  textTransform: 'uppercase',
+                                  backgroundColor:
+                                    u.status === 'active' ? 'rgba(34, 197, 94, 0.15)' : u.status === 'pending' ? 'rgba(234, 179, 8, 0.18)' : 'rgba(239, 68, 68, 0.15)',
+                                  color: u.status === 'active' ? '#4ADE80' : u.status === 'pending' ? '#FACC15' : '#F87171',
+                                  border: `1px solid ${u.status === 'active' ? 'rgba(34, 197, 94, 0.3)' : u.status === 'pending' ? 'rgba(234, 179, 8, 0.4)' : 'rgba(239, 68, 68, 0.3)'}`,
                                 }}
                               >
-                                <CheckCircle size={13} /> Aprobar
-                              </button>
-                            )}
+                                {u.status === 'active' && <CheckCircle size={12} />}
+                                {u.status === 'pending' && <Clock size={12} />}
+                                {u.status === 'blocked' && <XCircle size={12} />}
+                                {u.status}
+                              </span>
+                            </td>
 
-                            {/* Botón suspender / reactivar */}
-                            {u.status === 'active' && !isMainAdmin && (
-                              <button
-                                onClick={() => handleUpdateUser(u.id, u.email, { status: 'blocked' })}
-                                title="Suspender usuario"
-                                style={{
-                                  padding: '0.35rem 0.6rem',
-                                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                                  borderRadius: '4px',
-                                  color: '#F87171',
-                                  fontSize: '0.75rem',
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                Suspender
-                              </button>
-                            )}
+                            <td style={{ padding: '1rem' }}>
+                              <span style={{ fontSize: '0.82rem', color: '#F7F8FA', fontWeight: 600, display: 'block' }}>{u.belt}</span>
+                              <span style={{ fontSize: '0.72rem', color: '#9FA6B8' }}>{u.kyuDan} • {u.classesAttended} clases</span>
+                            </td>
 
-                            {u.status === 'blocked' && !isMainAdmin && (
-                              <button
-                                onClick={() => handleUpdateUser(u.id, u.email, { status: 'active' })}
-                                title="Reactivar usuario"
-                                style={{
-                                  padding: '0.35rem 0.6rem',
-                                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                                  border: '1px solid rgba(34, 197, 94, 0.3)',
-                                  borderRadius: '4px',
-                                  color: '#4ADE80',
-                                  fontSize: '0.75rem',
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                Reactivar
-                              </button>
-                            )}
+                            <td style={{ padding: '1rem', color: '#9FA6B8', fontSize: '0.78rem' }}>
+                              {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Sin registros'}
+                            </td>
 
-                            {/* Botón eliminar */}
-                            {!isMainAdmin && !isSelf && (
-                              <button
-                                onClick={() => handleDeleteUser(u.id, u.email, u.name)}
-                                title="Eliminar usuario permanentemente"
-                                style={{
-                                  padding: '0.4rem',
-                                  background: 'transparent',
-                                  border: 'none',
-                                  color: '#9FA6B8',
-                                  cursor: 'pointer',
-                                  borderRadius: '4px',
-                                }}
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            )}
-                          </div>
+                            <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                {u.status === 'pending' && (
+                                  <button
+                                    onClick={() => handleUpdateUser(u.id, u.email, { status: 'active' })}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '0.3rem',
+                                      padding: '0.35rem 0.75rem',
+                                      backgroundColor: '#15803D',
+                                      border: '1px solid #22C55E',
+                                      borderRadius: '4px',
+                                      color: '#FFF',
+                                      fontSize: '0.78rem',
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    <CheckCircle size={13} /> Aprobar
+                                  </button>
+                                )}
+
+                                {u.status === 'active' && !isMainAdmin && (
+                                  <button
+                                    onClick={() => handleUpdateUser(u.id, u.email, { status: 'blocked' })}
+                                    style={{
+                                      padding: '0.35rem 0.6rem',
+                                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                                      borderRadius: '4px',
+                                      color: '#F87171',
+                                      fontSize: '0.75rem',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    Suspender
+                                  </button>
+                                )}
+
+                                {u.status === 'blocked' && !isMainAdmin && (
+                                  <button
+                                    onClick={() => handleUpdateUser(u.id, u.email, { status: 'active' })}
+                                    style={{
+                                      padding: '0.35rem 0.6rem',
+                                      backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                                      border: '1px solid rgba(34, 197, 94, 0.3)',
+                                      borderRadius: '4px',
+                                      color: '#4ADE80',
+                                      fontSize: '0.75rem',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    Reactivar
+                                  </button>
+                                )}
+
+                                {!isMainAdmin && !isSelf && (
+                                  <button
+                                    onClick={() => handleDeleteUser(u.id, u.email, u.name)}
+                                    style={{
+                                      padding: '0.4rem',
+                                      background: 'transparent',
+                                      border: 'none',
+                                      color: '#9FA6B8',
+                                      cursor: 'pointer',
+                                      borderRadius: '4px',
+                                    }}
+                                  >
+                                    <Trash2 size={15} />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------ */}
+        {/* VISTA 2: ASISTENCIA DE ESTUDIANTES                           */}
+        {/* ------------------------------------------------------------ */}
+        {activeTab === 'asistencia' && (
+          <div>
+            {/* Encabezado Superior de Asistencia */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1.5rem',
+                marginBottom: '2rem',
+                paddingBottom: '1.5rem',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.4rem' }}>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      padding: '0.2rem 0.6rem',
+                      backgroundColor: 'rgba(35, 52, 107, 0.3)',
+                      border: '1px solid rgba(140, 166, 248, 0.4)',
+                      borderRadius: '20px',
+                      color: '#8CA6F8',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    <CalendarCheck size={14} /> Control de Asistencia
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: '#9FA6B8' }}>Colección: <strong>Attendance</strong></span>
+                </div>
+
+                <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#F7F8FA', lineHeight: 1.15 }}>
+                  Registro de Asistencia de Alumnos
+                </h1>
+                <p style={{ color: '#9FA6B8', fontSize: '0.92rem', marginTop: '0.35rem' }}>
+                  Marca la presencia diaria de los estudiantes para actualizar automáticamente sus horas y récord de clases.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                <button
+                  onClick={handleMarkAllPresent}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    padding: '0.65rem 1.15rem',
+                    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                    border: '1px solid rgba(34, 197, 94, 0.4)',
+                    borderRadius: '6px',
+                    color: '#4ADE80',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Check size={16} /> Marcar Todos Presentes
+                </button>
+              </div>
+            </div>
+
+            {/* Selector de Fecha y Clase */}
+            <div
+              className="card-sumi"
+              style={{
+                padding: '1.25rem',
+                marginBottom: '1.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1.25rem',
+              }}
+            >
+              {/* Controles de Fecha */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.85rem', color: '#9FA6B8', fontWeight: 600 }}>Fecha:</span>
+                <button
+                  onClick={() => changeDateByDays(-1)}
+                  style={{
+                    padding: '0.45rem',
+                    backgroundColor: '#161922',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '4px',
+                    color: '#F7F8FA',
+                    cursor: 'pointer',
+                  }}
+                  title="Día anterior"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  style={{
+                    padding: '0.45rem 0.75rem',
+                    backgroundColor: '#12151E',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '6px',
+                    color: '#F7F8FA',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    cursor: 'pointer',
+                  }}
+                />
+
+                <button
+                  onClick={() => changeDateByDays(1)}
+                  style={{
+                    padding: '0.45rem',
+                    backgroundColor: '#161922',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '4px',
+                    color: '#F7F8FA',
+                    cursor: 'pointer',
+                  }}
+                  title="Día siguiente"
+                >
+                  <ChevronRight size={16} />
+                </button>
+
+                <button
+                  onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+                  style={{
+                    padding: '0.45rem 0.85rem',
+                    backgroundColor: selectedDate === new Date().toISOString().split('T')[0] ? 'rgba(35, 52, 107, 0.4)' : '#161922',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '4px',
+                    color: '#F7F8FA',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Hoy
+                </button>
+              </div>
+
+              {/* Sesión de Clase */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#9FA6B8', fontWeight: 600 }}>Sesión / Horario:</span>
+                <select
+                  value={selectedSession}
+                  onChange={(e) => setSelectedSession(e.target.value)}
+                  style={{
+                    padding: '0.5rem 0.85rem',
+                    backgroundColor: '#12151E',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '6px',
+                    color: '#F7F8FA',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="general">Clase General (Todos)</option>
+                  <option value="infantil_4pm">Karate Infantil (4:00 PM - 5:00 PM)</option>
+                  <option value="principiantes_5pm">Principiantes & Intermedios (5:30 PM - 6:45 PM)</option>
+                  <option value="avanzados_7pm">Avanzados / Cintas Negras (7:00 PM - 8:30 PM)</option>
+                  <option value="kumite_sabado">Kumite Deportivo / Kata (Sábado)</option>
+                </select>
+              </div>
+
+              {/* Filtro por cinturón */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Filter size={15} color="#9FA6B8" />
+                <select
+                  value={attendanceBeltFilter}
+                  onChange={(e) => setAttendanceBeltFilter(e.target.value)}
+                  style={{
+                    padding: '0.45rem 0.75rem',
+                    backgroundColor: '#12151E',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '6px',
+                    color: '#F7F8FA',
+                    fontSize: '0.8rem',
+                    outline: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="all">Todos los cinturones</option>
+                  <option value="Cinturón Blanco">Cinturón Blanco</option>
+                  <option value="Cinturón Amarillo">Cinturón Amarillo</option>
+                  <option value="Cinturón Naranja">Cinturón Naranja</option>
+                  <option value="Cinturón Verde">Cinturón Verde</option>
+                  <option value="Cinturón Azul">Cinturón Azul</option>
+                  <option value="Cinturón Marrón">Cinturón Marrón</option>
+                  <option value="Cinturón Negro">Cinturón Negro</option>
+                </select>
+              </div>
+            </div>
+
+            {/* KPIs de Asistencia del Día */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '1.25rem',
+                marginBottom: '2rem',
+              }}
+            >
+              <div className="card-sumi" style={{ padding: '1.15rem', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '8px', backgroundColor: 'rgba(34, 197, 94, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CheckCircle size={22} color="#4ADE80" />
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.75rem', color: '#4ADE80', fontWeight: 700, textTransform: 'uppercase' }}>Presentes</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#F7F8FA' }}>{presentCountToday}</p>
+                </div>
+              </div>
+
+              <div className="card-sumi" style={{ padding: '1.15rem', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <UserX size={22} color="#F87171" />
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.75rem', color: '#F87171', fontWeight: 700, textTransform: 'uppercase' }}>Ausentes</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#F7F8FA' }}>{absentCountToday}</p>
+                </div>
+              </div>
+
+              <div className="card-sumi" style={{ padding: '1.15rem', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid rgba(234, 179, 8, 0.3)' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '8px', backgroundColor: 'rgba(234, 179, 8, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FileText size={22} color="#FACC15" />
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.75rem', color: '#FACC15', fontWeight: 700, textTransform: 'uppercase' }}>Justificados</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#F7F8FA' }}>{justifiedCountToday}</p>
+                </div>
+              </div>
+
+              <div className="card-sumi" style={{ padding: '1.15rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '8px', backgroundColor: 'rgba(35, 52, 107, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Users size={22} color="#8CA6F8" />
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.75rem', color: '#9FA6B8', fontWeight: 700, textTransform: 'uppercase' }}>Alumnos en Lista</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#F7F8FA' }}>{attendanceStudents.length}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de Asistencia de Estudiantes */}
+            <div className="card-sumi" style={{ overflow: 'hidden', padding: 0 }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#141722', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <th style={{ padding: '0.9rem 1.25rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Estudiante</th>
+                      <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Grado / Cinturón</th>
+                      <th style={{ padding: '0.9rem 1rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Clases Totales</th>
+                      <th style={{ padding: '0.9rem 1.25rem', color: '#9FA6B8', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', textAlign: 'center' }}>Estado de Asistencia</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendanceStudents.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} style={{ padding: '3rem 1rem', textAlign: 'center', color: '#9FA6B8' }}>
+                          No hay alumnos activos registrados en el dojo para esta selección.
                         </td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+                    ) : (
+                      attendanceStudents.map((student) => {
+                        const emailKey = student.email.toLowerCase();
+                        const currentStatus = attendanceRecords[emailKey];
 
-      {/* MODAL: Agregar Usuario */}
+                        return (
+                          <tr
+                            key={student.id || student.email}
+                            style={{
+                              borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                              backgroundColor:
+                                currentStatus === 'present'
+                                  ? 'rgba(34, 197, 94, 0.03)'
+                                  : currentStatus === 'absent'
+                                  ? 'rgba(239, 68, 68, 0.03)'
+                                  : 'transparent',
+                            }}
+                          >
+                            <td style={{ padding: '0.85rem 1.25rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                                <div
+                                  style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '50%',
+                                    backgroundColor: '#23346B',
+                                    color: '#FFF',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    overflow: 'hidden',
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {student.avatar ? (
+                                    <Image src={student.avatar} alt={student.name} width={36} height={36} unoptimized referrerPolicy="no-referrer" style={{ objectFit: 'cover' }} />
+                                  ) : (
+                                    student.name.charAt(0).toUpperCase()
+                                  )}
+                                </div>
+                                <div>
+                                  <p style={{ fontWeight: 700, color: '#F7F8FA', margin: 0 }}>{student.name}</p>
+                                  <p style={{ fontSize: '0.75rem', color: '#9FA6B8', margin: 0 }}>{student.email}</p>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td style={{ padding: '0.85rem 1rem' }}>
+                              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#F7F8FA', display: 'block' }}>{student.belt}</span>
+                              <span style={{ fontSize: '0.72rem', color: '#9FA6B8' }}>{student.kyuDan}</span>
+                            </td>
+
+                            <td style={{ padding: '0.85rem 1rem' }}>
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  fontSize: '0.82rem',
+                                  fontWeight: 700,
+                                  color: '#8CA6F8',
+                                }}
+                              >
+                                <Award size={14} color="#ECC94B" />
+                                {student.classesAttended} clases
+                              </span>
+                            </td>
+
+                            <td style={{ padding: '0.85rem 1.25rem', textAlign: 'center' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                                {/* Presente */}
+                                <button
+                                  onClick={() => handleMarkAttendance(student, 'present')}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    padding: '0.4rem 0.85rem',
+                                    borderRadius: '6px',
+                                    border: '1px solid',
+                                    borderColor: currentStatus === 'present' ? '#22C55E' : 'rgba(255, 255, 255, 0.12)',
+                                    backgroundColor: currentStatus === 'present' ? '#15803D' : '#141722',
+                                    color: currentStatus === 'present' ? '#FFF' : '#9FA6B8',
+                                    fontWeight: 700,
+                                    fontSize: '0.8rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                >
+                                  <Check size={14} /> Presente
+                                </button>
+
+                                {/* Ausente */}
+                                <button
+                                  onClick={() => handleMarkAttendance(student, 'absent')}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    padding: '0.4rem 0.85rem',
+                                    borderRadius: '6px',
+                                    border: '1px solid',
+                                    borderColor: currentStatus === 'absent' ? '#EF4444' : 'rgba(255, 255, 255, 0.12)',
+                                    backgroundColor: currentStatus === 'absent' ? '#991B1B' : '#141722',
+                                    color: currentStatus === 'absent' ? '#FFF' : '#9FA6B8',
+                                    fontWeight: 700,
+                                    fontSize: '0.8rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                >
+                                  <UserX size={14} /> Ausente
+                                </button>
+
+                                {/* Justificado */}
+                                <button
+                                  onClick={() => handleMarkAttendance(student, 'justified')}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    padding: '0.4rem 0.85rem',
+                                    borderRadius: '6px',
+                                    border: '1px solid',
+                                    borderColor: currentStatus === 'justified' ? '#EAB308' : 'rgba(255, 255, 255, 0.12)',
+                                    backgroundColor: currentStatus === 'justified' ? '#854D0E' : '#141722',
+                                    color: currentStatus === 'justified' ? '#FFF' : '#9FA6B8',
+                                    fontWeight: 700,
+                                    fontSize: '0.8rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                >
+                                  <FileText size={14} /> Justificado
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* ============================================================ */}
+      {/* MODAL: Agregar Usuario                                       */}
+      {/* ============================================================ */}
       {isAddModalOpen && (
         <div
           style={{
