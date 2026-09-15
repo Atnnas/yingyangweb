@@ -199,6 +199,7 @@ export default function AdminLayout({
 
   return (
     <div
+      className="admin-shell"
       style={{
         minHeight: '100vh',
         backgroundColor: '#0B0C10',
@@ -209,6 +210,7 @@ export default function AdminLayout({
       {/* SIDEBAR / CONTROL DE TABS IZQUIERDO CON ENLACES A SUBRUTAS   */}
       {/* ============================================================ */}
       <aside
+        className="admin-sidebar"
         style={{
           width: '260px',
           backgroundColor: '#0F121A',
@@ -225,6 +227,7 @@ export default function AdminLayout({
       >
         {/* Marca de Dojo Admin */}
         <div
+          className="admin-brand-box"
           style={{
             paddingBottom: '1.25rem',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
@@ -279,6 +282,7 @@ export default function AdminLayout({
 
         {/* Navegación de Tabs por Rutas */}
         <nav
+          className="admin-nav-tabs"
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -400,6 +404,7 @@ export default function AdminLayout({
 
         {/* Footer del Sidebar */}
         <div
+          className="admin-footer-box"
           style={{
             paddingTop: '1rem',
             borderTop: '1px solid rgba(255, 255, 255, 0.08)',
@@ -426,6 +431,7 @@ export default function AdminLayout({
 
       {/* Contenido Dinámico de la Subruta */}
       <main
+        className="admin-main"
         style={{
           flex: 1,
           padding: '2.5rem 2rem 5rem',
@@ -435,6 +441,52 @@ export default function AdminLayout({
       >
         {children}
       </main>
+
+      {/* Estilos Responsivos para el Panel Administrativo */}
+      <style jsx>{`
+        @media (max-width: 1023px) {
+          :global(.admin-shell) {
+            flex-direction: column !important;
+          }
+          :global(.admin-sidebar) {
+            width: 100% !important;
+            height: auto !important;
+            position: sticky !important;
+            top: 76px !important;
+            padding: 0.75rem 1rem !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justifyContent: space-between !important;
+            border-right: none !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            gap: 0.75rem !important;
+            background-color: rgba(15, 18, 26, 0.96) !important;
+            backdrop-filter: blur(12px) !important;
+            z-index: 45 !important;
+          }
+          :global(.admin-brand-box) {
+            padding-bottom: 0 !important;
+            margin-bottom: 0 !important;
+            border-bottom: none !important;
+          }
+          :global(.admin-nav-tabs) {
+            flex-direction: row !important;
+            overflow-x: auto !important;
+            gap: 0.4rem !important;
+            flex-wrap: nowrap !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+          :global(.admin-nav-tabs::-webkit-scrollbar) {
+            display: none !important;
+          }
+          :global(.admin-footer-box) {
+            display: none !important;
+          }
+          :global(.admin-main) {
+            padding: 1.5rem 1rem 4rem !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

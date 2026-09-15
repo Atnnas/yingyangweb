@@ -898,7 +898,7 @@ export default function Header() {
                 <h5 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#A0AEC0', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>
                   Datos Biométricos de Competición
                 </h5>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.65rem' }}>
                   <div style={{ backgroundColor: '#191D28', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
                     <span style={{ display: 'block', fontSize: '0.7rem', color: '#9FA6B8', marginBottom: '0.2rem' }}>Fecha Nac.</span>
                     <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#F7F8FA' }}>
