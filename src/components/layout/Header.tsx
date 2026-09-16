@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Menu, X, LogIn, LogOut, Award, Shield, Clock, User as UserIcon, FileText } from 'lucide-react';
+import { siteConfig } from '@/config/site';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -14,9 +15,9 @@ export default function Header() {
   const pathname = usePathname();
   const { user, openAuthModal, logout } = useAuth();
 
-  const isSuperAdmin =
-    user?.email?.toLowerCase().includes('david.artavia.rodriguez@gmail.com') ||
-    user?.email?.toLowerCase().includes('davidartaviarodriguez@gmail.com');
+  const isSuperAdmin = !!user?.email && siteConfig.superAdminEmails.some(
+    (adminEmail) => user.email?.toLowerCase().includes(adminEmail.toLowerCase())
+  );
 
   const isAdmin = !!user && (
     (user.role === 'administrator' && user.status === 'active') ||
@@ -81,8 +82,8 @@ export default function Header() {
             }}
           >
             <Image
-              src="/images/logos/Logo_Blanco_Color_Transparente.png"
-              alt="Logo Dojo Ying Yang"
+              src={siteConfig.logos.primary}
+              alt={siteConfig.brand.name}
               width={42}
               height={42}
               style={{ objectFit: 'contain' }}
@@ -100,7 +101,13 @@ export default function Header() {
                 color: '#F7F8FA',
               }}
             >
-              DOJO <span style={{ color: '#8CA6F8' }}>YING</span> <span style={{ color: '#E55353' }}>YANG</span>
+              {siteConfig.brand.headerDisplay.prefix}{' '}
+              <span style={{ color: siteConfig.brand.headerDisplay.color1 }}>
+                {siteConfig.brand.headerDisplay.accent1}
+              </span>{' '}
+              <span style={{ color: siteConfig.brand.headerDisplay.color2 }}>
+                {siteConfig.brand.headerDisplay.accent2}
+              </span>
             </span>
             <span
               style={{
@@ -112,7 +119,7 @@ export default function Header() {
                 textTransform: 'uppercase',
               }}
             >
-              Karate Do • Tradición & Poder
+              {siteConfig.brand.tagline}
             </span>
           </div>
         </Link>
@@ -784,7 +791,7 @@ export default function Header() {
                     Ficha Marcial WKF
                   </h3>
                   <p style={{ fontSize: '0.75rem', color: '#9FA6B8', margin: 0 }}>
-                    Federación Mundial de Karate • Dojo Ying Yang
+                    Federación Mundial de Karate • {siteConfig.brand.name}
                   </p>
                 </div>
               </div>

@@ -6,6 +6,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import GoogleAuthModal from '@/components/auth/GoogleAuthModal';
+import { siteConfig } from '@/config/site';
 
 const zenKaku = Zen_Kaku_Gothic_New({
   weight: ['300', '400', '500', '700', '900'],
@@ -15,12 +16,21 @@ const zenKaku = Zen_Kaku_Gothic_New({
 });
 
 export const metadata: Metadata = {
-  title: 'Dojo de Karate Ying Yang | Disciplina, Poder y Equilibrio',
-  description: 'Dojo oficial de Karate Do tradicional y de alta competencia. Formación marcial, valores de disciplina, karate infantil, juvenil y adultos.',
-  keywords: ['karate', 'dojo', 'ying yang', 'artes marciales', 'defensa personal', 'kata', 'kumite'],
+  title: `${siteConfig.brand.name} | ${siteConfig.brand.tagline}`,
+  description: siteConfig.brand.description,
+  keywords: [
+    'karate',
+    'dojo',
+    siteConfig.brand.name.toLowerCase(),
+    'artes marciales',
+    'defensa personal',
+    'kata',
+    'kumite',
+    'wkf',
+  ],
   openGraph: {
-    title: 'Dojo de Karate Ying Yang',
-    description: 'Equilibrio entre la mente, la técnica y el espíritu. Conoce nuestros programas marciales y entrena en el Dojo Ying Yang.',
+    title: siteConfig.brand.name,
+    description: siteConfig.brand.description,
     type: 'website',
   },
 };

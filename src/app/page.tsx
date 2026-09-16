@@ -4,6 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { Droplets, Flame } from 'lucide-react';
 import SponsorsTicker from '@/components/sponsors/SponsorsTicker';
+import { siteConfig } from '@/config/site';
 
 export default function HomePage() {
   return (
@@ -80,12 +81,12 @@ export default function HomePage() {
                 Camino a la Excelencia Marcial en{' '}
                 <span
                   style={{
-                    background: 'linear-gradient(135deg, #8CA6F8 0%, #E55353 100%)',
+                    background: `linear-gradient(135deg, ${siteConfig.brand.headerDisplay.color1} 0%, ${siteConfig.brand.headerDisplay.color2} 100%)`,
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                   }}
                 >
-                  Ying Yang
+                  {siteConfig.brand.shortName}
                 </span>
               </h1>
 
@@ -141,8 +142,8 @@ export default function HomePage() {
                   }}
                 >
                   <Image
-                    src="/images/logos/Logo_Blanco_Color_Transparente.png"
-                    alt="Logo Insignia Dojo Ying Yang"
+                    src={siteConfig.logos.primary}
+                    alt={`Logo Insignia ${siteConfig.brand.name}`}
                     fill
                     sizes="(max-width: 768px) 200px, 250px"
                     style={{ objectFit: 'contain' }}
@@ -159,10 +160,10 @@ export default function HomePage() {
                     color: '#F7F8FA',
                   }}
                 >
-                  DOJO YING YANG
+                  {siteConfig.brand.name.toUpperCase()}
                 </h3>
                 <p style={{ fontSize: '0.88rem', color: '#9FA6B8', margin: '0 auto 1.5rem', maxWidth: '360px', lineHeight: 1.5 }}>
-                  El arte de vencer sin luchar y la firmeza del golpe que nace de la calma interior.
+                  {siteConfig.brand.tagline}
                 </p>
 
                 {/* Dualidad Ying Yang Badges */}

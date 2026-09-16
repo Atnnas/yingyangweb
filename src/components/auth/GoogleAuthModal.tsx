@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { siteConfig } from '@/config/site';
 import { X, ShieldCheck, Lock, Award, CheckCircle2 } from 'lucide-react';
 
 export default function GoogleAuthModal() {
@@ -83,7 +84,7 @@ export default function GoogleAuthModal() {
             <ShieldCheck size={14} /> Portal de Alumnos & Maestros
           </div>
           <h3 style={{ fontSize: '1.35rem', marginBottom: '0.5rem', color: '#F7F8FA' }}>
-            Acceso al Dojo Ying Yang
+            Acceso a {siteConfig.brand.name}
           </h3>
           <p style={{ fontSize: '0.875rem', color: '#9FA6B8', lineHeight: 1.5 }}>
             Inicia sesión con tu cuenta oficial de Google para gestionar tus asistencias, exámenes de grado y horarios.

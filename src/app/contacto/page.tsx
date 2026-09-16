@@ -1,16 +1,15 @@
 import React from 'react';
 import { MapPin, Phone, Mail, Clock, MessageSquare, ExternalLink } from 'lucide-react';
 import type { Metadata } from 'next';
+import { siteConfig } from '@/config/site';
 
 export const metadata: Metadata = {
-  title: 'Contacto | Dojo de Karate Ying Yang',
-  description: 'Contáctanos directamente por WhatsApp o visita nuestras instalaciones del Dojo Ying Yang.',
+  title: `Contacto | ${siteConfig.brand.name}`,
+  description: `Contáctanos directamente por WhatsApp o visita nuestras instalaciones del ${siteConfig.brand.name}.`,
 };
 
 export default function ContactoPage() {
-  const whatsappMessage = encodeURIComponent(
-    'Hola Sensei! Me gustaría solicitar información sobre las clases y horarios en el Dojo Ying Yang.'
-  );
+  const whatsappMessage = encodeURIComponent(siteConfig.contact.whatsappDefaultMessage);
 
   return (
     <div style={{ paddingBottom: '6rem' }}>
@@ -135,7 +134,7 @@ export default function ContactoPage() {
               </div>
 
               <a
-                href={`https://wa.me/525512345678?text=${whatsappMessage}`}
+                href={`https://wa.me/${siteConfig.contact.whatsappNumber}?text=${whatsappMessage}`}
                 target="_blank"
                 rel="noreferrer"
                 style={{
@@ -184,9 +183,9 @@ export default function ContactoPage() {
                       <strong style={{ color: '#F7F8FA', display: 'block', fontSize: '0.95rem' }}>
                         Dirección Central
                       </strong>
-                      <span style={{ color: '#CBD5E1' }}>Av. de las Artes Marciales #108, Col. Tradición, Zona Centro</span>
+                      <span style={{ color: '#CBD5E1' }}>{siteConfig.contact.address}</span>
                       <p style={{ fontSize: '0.8rem', color: '#687187', margin: '0.25rem 0 0' }}>
-                        Estacionamiento privado para alumnos y familiares.
+                        {siteConfig.contact.addressNote}
                       </p>
                     </div>
                   </div>
@@ -198,9 +197,9 @@ export default function ContactoPage() {
                       <strong style={{ color: '#F7F8FA', display: 'block', fontSize: '0.95rem' }}>
                         Horario de Atención en Recepción
                       </strong>
-                      <span style={{ color: '#CBD5E1' }}>Lunes a Viernes: 15:30 - 21:30 hrs</span>
+                      <span style={{ color: '#CBD5E1' }}>{siteConfig.contact.schedule.weekdays}</span>
                       <br />
-                      <span style={{ color: '#CBD5E1' }}>Sábados: 08:00 - 13:30 hrs</span>
+                      <span style={{ color: '#CBD5E1' }}>{siteConfig.contact.schedule.saturdays}</span>
                     </div>
                   </div>
 
@@ -211,7 +210,7 @@ export default function ContactoPage() {
                       <strong style={{ color: '#F7F8FA', display: 'block', fontSize: '0.95rem' }}>
                         Línea Telefónica Directa
                       </strong>
-                      <span style={{ color: '#CBD5E1' }}>+52 (55) 1234-5678</span>
+                      <span style={{ color: '#CBD5E1' }}>{siteConfig.contact.phone}</span>
                     </div>
                   </div>
 
@@ -222,7 +221,7 @@ export default function ContactoPage() {
                       <strong style={{ color: '#F7F8FA', display: 'block', fontSize: '0.95rem' }}>
                         Correo Electrónico
                       </strong>
-                      <span style={{ color: '#CBD5E1' }}>contacto@dojoyingyang.com</span>
+                      <span style={{ color: '#CBD5E1' }}>{siteConfig.contact.email}</span>
                     </div>
                   </div>
                 </div>
@@ -245,14 +244,14 @@ export default function ContactoPage() {
               >
                 <div>
                   <p style={{ fontSize: '0.88rem', fontWeight: 700, color: '#F7F8FA', margin: 0 }}>
-                    Tatami Principal Dojo Ying Yang
+                    Instalaciones {siteConfig.brand.name}
                   </p>
                   <p style={{ fontSize: '0.78rem', color: '#9FA6B8', margin: '0.2rem 0 0' }}>
-                    180 m² de tatami reglamentario y zona de entrenamiento
+                    {siteConfig.contact.facilityArea}
                   </p>
                 </div>
                 <a
-                  href="https://maps.google.com"
+                  href={siteConfig.contact.mapsUrl}
                   target="_blank"
                   rel="noreferrer"
                   style={{

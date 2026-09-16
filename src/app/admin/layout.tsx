@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { siteConfig } from '@/config/site';
 import {
   ShieldCheck,
   Users,
@@ -62,9 +63,9 @@ export default function AdminLayout({
   }
 
   // 2. Verificación estricta de permisos: ÚNICAMENTE rol de administrator (el más elevado)
-  const isSuperAdmin =
-    user?.email?.toLowerCase().includes('david.artavia.rodriguez@gmail.com') ||
-    user?.email?.toLowerCase().includes('davidartaviarodriguez@gmail.com');
+  const isSuperAdmin = !!user?.email && siteConfig.superAdminEmails.some(
+    (adminEmail) => user.email?.toLowerCase().includes(adminEmail.toLowerCase())
+  );
 
   const isAuthorizedAdmin = !!user && (
     (user.role === 'administrator' && user.status === 'active') ||
@@ -145,7 +146,7 @@ export default function AdminLayout({
               marginBottom: '2rem',
             }}
           >
-            La sección administrativa y todas sus subrutas son accesibles <strong>única y exclusivamente</strong> para cuentas con el rol de <strong style={{ color: '#F7F8FA' }}>administrator</strong> (el rol más elevado del Dojo Ying Yang).
+            La sección administrativa y todas sus subrutas son accesibles <strong>única y exclusivamente</strong> para cuentas con el rol de <strong style={{ color: '#F7F8FA' }}>administrator</strong> (el rol más elevado de {siteConfig.brand.name}).
             {user ? (
               <span style={{ display: 'block', marginTop: '0.75rem', padding: '0.65rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
                 Has iniciado sesión como <strong style={{ color: '#F7F8FA' }}>{user.email}</strong>, pero tu rol actual es <strong style={{ color: '#E55353' }}>{user.role}</strong> {user.status !== 'active' ? `(estado: ${user.status})` : ''}. No posees permisos de administrador activo.
@@ -274,7 +275,7 @@ export default function AdminLayout({
                   textTransform: 'uppercase',
                 }}
               >
-                Ying Yang System
+                {siteConfig.brand.shortName} System
               </span>
             </div>
           </div>

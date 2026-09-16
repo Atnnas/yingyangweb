@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { MapPin, Phone, Clock, Mail, Shield, Award, Users } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { siteConfig } from '@/config/site';
 
 export default function Footer() {
   const pathname = usePathname();
@@ -56,8 +57,8 @@ export default function Footer() {
                 }}
               >
                 <Image
-                  src="/images/logos/Logo_Blanco_Color_Transparente.png"
-                  alt="Logo Dojo Ying Yang"
+                  src={siteConfig.logos.primary}
+                  alt={siteConfig.brand.name}
                   width={38}
                   height={38}
                   style={{ objectFit: 'contain' }}
@@ -65,22 +66,24 @@ export default function Footer() {
               </div>
               <div>
                 <span style={{ display: 'block', fontSize: '1.15rem', fontWeight: 900, color: '#FFFFFF', letterSpacing: '0.06em', lineHeight: 1.1 }}>
-                  DOJO <span style={{ color: '#8CA6F8' }}>YING</span> <span style={{ color: '#E55353' }}>YANG</span>
+                  {siteConfig.brand.headerDisplay.prefix}{' '}
+                  <span style={{ color: siteConfig.brand.headerDisplay.color1 }}>{siteConfig.brand.headerDisplay.accent1}</span>{' '}
+                  <span style={{ color: siteConfig.brand.headerDisplay.color2 }}>{siteConfig.brand.headerDisplay.accent2}</span>
                 </span>
                 <span style={{ fontSize: '0.68rem', color: '#9FA6B8', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 700 }}>
-                  Karate Do Tradicional
+                  {siteConfig.brand.tagline}
                 </span>
               </div>
             </div>
 
             <p style={{ fontSize: '0.88rem', color: '#9DA3B4', lineHeight: 1.65, marginBottom: '1.5rem' }}>
-              Forjamos carácter, rectitud moral, autocontrol y fortaleza física y mental a través del camino del Karate Do tradicional y formativo.
+              {siteConfig.brand.description}
             </p>
 
             {/* Redes Sociales */}
             <div style={{ display: 'flex', gap: '0.65rem' }}>
               <a
-                href="https://instagram.com"
+                href={siteConfig.social.instagram}
                 target="_blank"
                 rel="noreferrer"
                 style={{
@@ -95,7 +98,7 @@ export default function Footer() {
                   color: '#CBD5E1',
                   transition: 'all 0.2s',
                 }}
-                aria-label="Instagram Dojo Ying Yang"
+                aria-label={`Instagram ${siteConfig.brand.name}`}
               >
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
@@ -105,7 +108,7 @@ export default function Footer() {
               </a>
 
               <a
-                href="https://facebook.com"
+                href={siteConfig.social.facebook}
                 target="_blank"
                 rel="noreferrer"
                 style={{
@@ -120,7 +123,7 @@ export default function Footer() {
                   color: '#CBD5E1',
                   transition: 'all 0.2s',
                 }}
-                aria-label="Facebook Dojo Ying Yang"
+                aria-label={`Facebook ${siteConfig.brand.name}`}
               >
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
@@ -128,7 +131,7 @@ export default function Footer() {
               </a>
 
               <a
-                href="https://youtube.com"
+                href={siteConfig.social.youtube}
                 target="_blank"
                 rel="noreferrer"
                 style={{
@@ -143,7 +146,7 @@ export default function Footer() {
                   color: '#CBD5E1',
                   transition: 'all 0.2s',
                 }}
-                aria-label="YouTube Dojo Ying Yang"
+                aria-label={`YouTube ${siteConfig.brand.name}`}
               >
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/>
@@ -223,19 +226,19 @@ export default function Footer() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.85rem', color: '#9DA3B4' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem' }}>
                 <MapPin size={17} color="#E55353" style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span>Instalaciones Centrales del Dojo, Área de Tatami Oficial</span>
+                <span>{siteConfig.contact.address}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                 <Clock size={17} color="#8CA6F8" style={{ flexShrink: 0 }} />
-                <span>Lun a Vie: 16:00 - 21:30 | Sáb: 08:00 - 13:00</span>
+                <span>{siteConfig.contact.schedule.weekdays} | {siteConfig.contact.schedule.saturdays}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                 <Phone size={17} color="#4ADE80" style={{ flexShrink: 0 }} />
-                <span>Informes & WhatsApp Directo</span>
+                <span>{siteConfig.contact.phone}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                 <Mail size={17} color="#ECC94B" style={{ flexShrink: 0 }} />
-                <span>contacto@dojoyingyang.com</span>
+                <span>{siteConfig.contact.email}</span>
               </div>
             </div>
           </div>
@@ -256,7 +259,7 @@ export default function Footer() {
           }}
         >
           <p style={{ margin: 0 }}>
-            © {new Date().getFullYear()} Dojo de Karate Ying Yang. Todos los derechos reservados.
+            © {new Date().getFullYear()} {siteConfig.brand.name}. Todos los derechos reservados.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>

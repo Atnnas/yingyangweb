@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Sponsor } from '@/types';
+import { siteConfig } from '@/config/site';
 import { Handshake, ExternalLink, Phone, Globe } from 'lucide-react';
 
 function formatWebsiteUrl(url?: string): string {
@@ -162,8 +163,8 @@ export default function SponsorsTicker() {
             >
               <div
                 style={{
-                  height: 'clamp(95px, 14vw, 135px)',
-                  maxWidth: 'clamp(240px, 35vw, 360px)',
+                  height: 'clamp(120px, 17vw, 165px)',
+                  maxWidth: 'clamp(280px, 40vw, 440px)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -176,7 +177,7 @@ export default function SponsorsTicker() {
                     maxHeight: '100%',
                     maxWidth: '100%',
                     objectFit: 'contain',
-                    filter: 'drop-shadow(0 8px 18px rgba(0, 0, 0, 0.75))',
+                    filter: 'drop-shadow(0 10px 22px rgba(0, 0, 0, 0.8))',
                     transition: 'transform 0.25s ease',
                   }}
                   className="sponsor-logo-img"
@@ -184,10 +185,10 @@ export default function SponsorsTicker() {
               </div>
               <h3
                 style={{
-                  fontSize: 'clamp(1.25rem, 2.5vw, 1.55rem)',
+                  fontSize: 'clamp(1.35rem, 2.7vw, 1.75rem)',
                   fontWeight: 900,
                   color: '#FFFFFF',
-                  marginTop: '0.85rem',
+                  marginTop: '0.95rem',
                   marginBottom: '0.2rem',
                   letterSpacing: '0.03em',
                   textAlign: 'center',
@@ -197,7 +198,7 @@ export default function SponsorsTicker() {
               </h3>
               <span
                 style={{
-                  fontSize: '0.74rem',
+                  fontSize: '0.78rem',
                   color: '#8CA6F8',
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
@@ -207,8 +208,8 @@ export default function SponsorsTicker() {
                   gap: '0.4rem',
                 }}
               >
-                Patrocinador Oficial del Dojo
-                <ExternalLink size={12} color="#8CA6F8" />
+                Patrocinador Oficial de {siteConfig.brand.name}
+                <ExternalLink size={13} color="#8CA6F8" />
               </span>
             </a>
           ) : (
@@ -226,8 +227,8 @@ export default function SponsorsTicker() {
             >
               <div
                 style={{
-                  height: 'clamp(95px, 14vw, 135px)',
-                  maxWidth: 'clamp(240px, 35vw, 360px)',
+                  height: 'clamp(120px, 17vw, 165px)',
+                  maxWidth: 'clamp(280px, 40vw, 440px)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -240,16 +241,16 @@ export default function SponsorsTicker() {
                     maxHeight: '100%',
                     maxWidth: '100%',
                     objectFit: 'contain',
-                    filter: 'drop-shadow(0 8px 18px rgba(0, 0, 0, 0.75))',
+                    filter: 'drop-shadow(0 10px 22px rgba(0, 0, 0, 0.8))',
                   }}
                 />
               </div>
               <h3
                 style={{
-                  fontSize: 'clamp(1.25rem, 2.5vw, 1.55rem)',
+                  fontSize: 'clamp(1.35rem, 2.7vw, 1.75rem)',
                   fontWeight: 900,
                   color: '#FFFFFF',
-                  marginTop: '0.65rem',
+                  marginTop: '0.75rem',
                   marginBottom: '0.15rem',
                   letterSpacing: '0.03em',
                   textAlign: 'center',
@@ -259,14 +260,14 @@ export default function SponsorsTicker() {
               </h3>
               <span
                 style={{
-                  fontSize: '0.7rem',
+                  fontSize: '0.78rem',
                   color: '#8CA6F8',
-                  letterSpacing: '0.1em',
+                  letterSpacing: '0.12em',
                   textTransform: 'uppercase',
-                  fontWeight: 700,
+                  fontWeight: 800,
                 }}
               >
-                Patrocinador Oficial del Dojo
+                Patrocinador Oficial de {siteConfig.brand.name}
               </span>
             </div>
           )}
@@ -548,12 +549,12 @@ export default function SponsorsTicker() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '1.25rem',
-                  padding: '0.9rem 1.6rem 0.9rem 1.1rem',
+                  gap: '1.35rem',
+                  padding: '1rem 1.85rem 1rem 1.25rem',
                   backgroundColor: 'rgba(18, 22, 33, 0.95)',
-                  border: '1.5px solid rgba(140, 166, 248, 0.25)',
-                  borderRadius: '14px',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+                  border: '1.5px solid rgba(140, 166, 248, 0.3)',
+                  borderRadius: '16px',
+                  boxShadow: '0 10px 28px rgba(0, 0, 0, 0.55)',
                   flexShrink: 0,
                   transition: 'all 0.25s ease',
                   cursor: webUrl ? 'pointer' : 'default',
@@ -563,12 +564,12 @@ export default function SponsorsTicker() {
                 {/* Logo del Patrocinador */}
                 <div
                   style={{
-                    height: '72px',
-                    maxWidth: '170px',
+                    height: '88px',
+                    maxWidth: '210px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '0.25rem',
+                    padding: '0.3rem',
                     overflow: 'hidden',
                     flexShrink: 0,
                   }}
@@ -580,17 +581,17 @@ export default function SponsorsTicker() {
                       maxHeight: '100%',
                       maxWidth: '100%',
                       objectFit: 'contain',
-                      filter: 'drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7))',
+                      filter: 'drop-shadow(0 6px 12px rgba(0, 0, 0, 0.75))',
                     }}
                   />
                 </div>
 
                 {/* Información del Patrocinador: Nombre, Teléfono y Web debajo */}
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <p
                       style={{
-                        fontSize: '1.02rem',
+                        fontSize: '1.14rem',
                         fontWeight: 900,
                         color: '#F7F8FA',
                         margin: 0,
@@ -599,7 +600,7 @@ export default function SponsorsTicker() {
                     >
                       {sponsor.name}
                     </p>
-                    {webUrl && <ExternalLink size={13} color="#8CA6F8" />}
+                    {webUrl && <ExternalLink size={14} color="#8CA6F8" />}
                   </div>
 
                   {/* Debajo del nombre: Teléfono y Dirección Web */}
