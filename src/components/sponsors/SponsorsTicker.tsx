@@ -130,10 +130,10 @@ export default function SponsorsTicker() {
           className="sponsor-showcase-box"
           style={{
             background: 'linear-gradient(145deg, rgba(18, 22, 33, 0.95) 0%, rgba(10, 13, 20, 0.98) 100%)',
-            border: '1px solid rgba(140, 166, 248, 0.25)',
+            border: '1.5px solid rgba(140, 166, 248, 0.35)',
             borderRadius: '16px',
-            padding: '1.25rem 1.5rem',
-            boxShadow: '0 12px 35px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+            padding: '1.5rem 1.75rem',
+            boxShadow: '0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
             position: 'relative',
             overflow: 'hidden',
           }}
@@ -153,17 +153,17 @@ export default function SponsorsTicker() {
                 justifyContent: 'center',
                 textDecoration: 'none',
                 cursor: 'pointer',
-                padding: '0.75rem 1rem',
-                borderRadius: '12px',
-                background: 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, rgba(18, 21, 30, 0.3) 70%, transparent 100%)',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
+                padding: '1rem 1.25rem',
+                borderRadius: '14px',
+                background: 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.06) 0%, rgba(18, 21, 30, 0.35) 70%, transparent 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 transition: 'all 0.25s ease',
               }}
             >
               <div
                 style={{
-                  height: 'clamp(65px, 9vw, 85px)',
-                  maxWidth: 'clamp(180px, 30vw, 280px)',
+                  height: 'clamp(95px, 14vw, 135px)',
+                  maxWidth: 'clamp(240px, 35vw, 360px)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -176,7 +176,7 @@ export default function SponsorsTicker() {
                     maxHeight: '100%',
                     maxWidth: '100%',
                     objectFit: 'contain',
-                    filter: 'drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7))',
+                    filter: 'drop-shadow(0 8px 18px rgba(0, 0, 0, 0.75))',
                     transition: 'transform 0.25s ease',
                   }}
                   className="sponsor-logo-img"
@@ -184,11 +184,11 @@ export default function SponsorsTicker() {
               </div>
               <h3
                 style={{
-                  fontSize: 'clamp(1.1rem, 2vw, 1.35rem)',
+                  fontSize: 'clamp(1.25rem, 2.5vw, 1.55rem)',
                   fontWeight: 900,
                   color: '#FFFFFF',
-                  marginTop: '0.65rem',
-                  marginBottom: '0.15rem',
+                  marginTop: '0.85rem',
+                  marginBottom: '0.2rem',
                   letterSpacing: '0.03em',
                   textAlign: 'center',
                 }}
@@ -197,18 +197,18 @@ export default function SponsorsTicker() {
               </h3>
               <span
                 style={{
-                  fontSize: '0.7rem',
+                  fontSize: '0.74rem',
                   color: '#8CA6F8',
-                  letterSpacing: '0.1em',
+                  letterSpacing: '0.12em',
                   textTransform: 'uppercase',
-                  fontWeight: 700,
+                  fontWeight: 800,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
+                  gap: '0.4rem',
                 }}
               >
                 Patrocinador Oficial del Dojo
-                <ExternalLink size={11} color="#8CA6F8" />
+                <ExternalLink size={12} color="#8CA6F8" />
               </span>
             </a>
           ) : (
@@ -218,16 +218,16 @@ export default function SponsorsTicker() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '0.75rem 1rem',
-                borderRadius: '12px',
-                background: 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, rgba(18, 21, 30, 0.3) 70%, transparent 100%)',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
+                padding: '1rem 1.25rem',
+                borderRadius: '14px',
+                background: 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.06) 0%, rgba(18, 21, 30, 0.35) 70%, transparent 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
               }}
             >
               <div
                 style={{
-                  height: 'clamp(65px, 9vw, 85px)',
-                  maxWidth: 'clamp(180px, 30vw, 280px)',
+                  height: 'clamp(95px, 14vw, 135px)',
+                  maxWidth: 'clamp(240px, 35vw, 360px)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -240,13 +240,13 @@ export default function SponsorsTicker() {
                     maxHeight: '100%',
                     maxWidth: '100%',
                     objectFit: 'contain',
-                    filter: 'drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7))',
+                    filter: 'drop-shadow(0 8px 18px rgba(0, 0, 0, 0.75))',
                   }}
                 />
               </div>
               <h3
                 style={{
-                  fontSize: 'clamp(1.1rem, 2vw, 1.35rem)',
+                  fontSize: 'clamp(1.25rem, 2.5vw, 1.55rem)',
                   fontWeight: 900,
                   color: '#FFFFFF',
                   marginTop: '0.65rem',
@@ -548,12 +548,12 @@ export default function SponsorsTicker() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '1rem',
-                  padding: '0.75rem 1.35rem 0.75rem 0.85rem',
-                  backgroundColor: 'rgba(18, 22, 33, 0.92)',
-                  border: '1.5px solid rgba(140, 166, 248, 0.2)',
-                  borderRadius: '12px',
-                  boxShadow: '0 6px 18px rgba(0, 0, 0, 0.4)',
+                  gap: '1.25rem',
+                  padding: '0.9rem 1.6rem 0.9rem 1.1rem',
+                  backgroundColor: 'rgba(18, 22, 33, 0.95)',
+                  border: '1.5px solid rgba(140, 166, 248, 0.25)',
+                  borderRadius: '14px',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
                   flexShrink: 0,
                   transition: 'all 0.25s ease',
                   cursor: webUrl ? 'pointer' : 'default',
@@ -563,8 +563,8 @@ export default function SponsorsTicker() {
                 {/* Logo del Patrocinador */}
                 <div
                   style={{
-                    height: '52px',
-                    maxWidth: '130px',
+                    height: '72px',
+                    maxWidth: '170px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -580,17 +580,17 @@ export default function SponsorsTicker() {
                       maxHeight: '100%',
                       maxWidth: '100%',
                       objectFit: 'contain',
-                      filter: 'drop-shadow(0 3px 8px rgba(0, 0, 0, 0.6))',
+                      filter: 'drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7))',
                     }}
                   />
                 </div>
 
                 {/* Información del Patrocinador: Nombre, Teléfono y Web debajo */}
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                     <p
                       style={{
-                        fontSize: '0.92rem',
+                        fontSize: '1.02rem',
                         fontWeight: 900,
                         color: '#F7F8FA',
                         margin: 0,
@@ -599,28 +599,28 @@ export default function SponsorsTicker() {
                     >
                       {sponsor.name}
                     </p>
-                    {webUrl && <ExternalLink size={12} color="#8CA6F8" />}
+                    {webUrl && <ExternalLink size={13} color="#8CA6F8" />}
                   </div>
 
                   {/* Debajo del nombre: Teléfono y Dirección Web */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.3rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginTop: '0.35rem' }}>
                     {sponsor.phone && (
                       <span
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '0.25rem',
-                          fontSize: '0.68rem',
+                          gap: '0.3rem',
+                          fontSize: '0.74rem',
                           fontWeight: 800,
                           color: '#34D399',
                           backgroundColor: 'rgba(16, 185, 129, 0.18)',
                           border: '1px solid rgba(16, 185, 129, 0.4)',
                           boxShadow: '0 0 8px rgba(16, 185, 129, 0.25)',
-                          padding: '0.15rem 0.45rem',
+                          padding: '0.2rem 0.55rem',
                           borderRadius: '6px',
                         }}
                       >
-                        <Phone size={10} />
+                        <Phone size={11} />
                         <span>{sponsor.phone}</span>
                       </span>
                     )}
@@ -630,18 +630,18 @@ export default function SponsorsTicker() {
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '0.25rem',
-                          fontSize: '0.68rem',
+                          gap: '0.3rem',
+                          fontSize: '0.74rem',
                           fontWeight: 800,
                           color: '#60A5FA',
                           backgroundColor: 'rgba(59, 130, 246, 0.18)',
                           border: '1px solid rgba(59, 130, 246, 0.4)',
                           boxShadow: '0 0 8px rgba(59, 130, 246, 0.25)',
-                          padding: '0.15rem 0.45rem',
+                          padding: '0.2rem 0.55rem',
                           borderRadius: '6px',
                         }}
                       >
-                        <Globe size={10} />
+                        <Globe size={11} />
                         <span>{displayWeb}</span>
                       </span>
                     )}
