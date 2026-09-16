@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   keywords: ['karate', 'dojo', 'ying yang', 'artes marciales', 'defensa personal', 'kata', 'kumite'],
   openGraph: {
     title: 'Dojo de Karate Ying Yang',
-    description: 'Equilibrio entre la mente, la técnica y el espíritu. Conoce nuestros programas y reserva tu clase muestra gratuita.',
+    description: 'Equilibrio entre la mente, la técnica y el espíritu. Conoce nuestros programas marciales y entrena en el Dojo Ying Yang.',
     type: 'website',
   },
 };

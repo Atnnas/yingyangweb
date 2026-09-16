@@ -470,10 +470,6 @@ export default function Header() {
               Acceso Alumnos
             </button>
           )}
-
-          <Link href="/contacto" className="btn-martial-primary" style={{ padding: '0.6rem 1.15rem', fontSize: '0.85rem' }}>
-            Clase Muestra
-          </Link>
         </div>
 
         {/* Botón Menú Móvil */}
@@ -723,15 +719,6 @@ export default function Header() {
                 <LogIn size={18} /> Iniciar Sesión con Google
               </button>
             )}
-
-            <Link
-              href="/contacto"
-              onClick={closeMobile}
-              className="btn-martial-primary"
-              style={{ width: '100%', textAlign: 'center' }}
-            >
-              Solicitar Clase Muestra
-            </Link>
           </div>
         </div>
       )}

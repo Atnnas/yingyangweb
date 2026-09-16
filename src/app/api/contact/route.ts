@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         savedToDb = true;
         return NextResponse.json({
           success: true,
-          message: 'Solicitud de clase muestra guardada con éxito en MongoDB.',
+          message: 'Mensaje de contacto guardado con éxito en MongoDB.',
           id: result.insertedId,
           savedToDb: true,
         });
