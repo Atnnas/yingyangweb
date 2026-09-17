@@ -5,13 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Menu, X, LogIn, LogOut, Award, Shield, Clock, User as UserIcon, FileText } from 'lucide-react';
+import { Menu, X, LogIn, LogOut, Award, Clock, ShieldCheck, ChevronRight } from 'lucide-react';
 import { siteConfig } from '@/config/site';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  const [isFichaModalOpen, setIsFichaModalOpen] = useState(false);
   const pathname = usePathname();
   const { user, openAuthModal, logout } = useAuth();
 
@@ -250,7 +249,7 @@ export default function Header() {
                     position: 'absolute',
                     top: '110%',
                     right: 0,
-                    width: '260px',
+                    width: '280px',
                     backgroundColor: '#161922',
                     border: '1px solid rgba(255, 255, 255, 0.12)',
                     borderRadius: '8px',
@@ -309,90 +308,22 @@ export default function Header() {
                       <span style={{ fontSize: '0.7rem', color: '#9FA6B8' }}>{user.classesAttended || 0} clases</span>
                     </div>
 
-                    {(user.kataCategory || user.kumiteCategory) && (
-                      <div
-                        style={{
-                          marginTop: '0.6rem',
-                          padding: '0.55rem',
-                          backgroundColor: 'rgba(0, 0, 0, 0.35)',
-                          border: '1px solid rgba(255, 255, 255, 0.08)',
-                          borderRadius: '6px',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                          <span style={{ fontSize: '0.66rem', fontWeight: 700, letterSpacing: '0.06em', color: '#9DA3B4', textTransform: 'uppercase' }}>
-                            Categorías WKF
-                          </span>
-                          {user.age && (
-                            <span style={{ fontSize: '0.68rem', color: '#CBD5E1', fontWeight: 600 }}>
-                              {user.age} años {user.weight ? `• ${user.weight}kg` : ''}
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                          {user.kataCategory && (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem' }}>
-                              <span style={{ color: '#93C5FD', fontWeight: 600 }}>🥋 Kata:</span>
-                              <span style={{ color: '#F7F8FA', fontWeight: 700, backgroundColor: 'rgba(59, 130, 246, 0.2)', padding: '0.1rem 0.35rem', borderRadius: '4px', border: '1px solid rgba(96, 165, 250, 0.3)' }}>
-                                {user.kataCategory}
-                              </span>
-                            </div>
-                          )}
-                          {user.kumiteCategory && (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem' }}>
-                              <span style={{ color: '#FCA5A5', fontWeight: 600 }}>🥊 Kumite:</span>
-                              <span style={{ color: '#F7F8FA', fontWeight: 700, backgroundColor: 'rgba(239, 68, 68, 0.2)', padding: '0.1rem 0.35rem', borderRadius: '4px', border: '1px solid rgba(248, 113, 113, 0.3)' }}>
-                                {user.kumiteCategory}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsFichaModalOpen(true);
-                        setIsUserDropdownOpen(false);
-                      }}
-                      style={{
-                        width: '100%',
-                        marginTop: '0.6rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.45rem',
-                        padding: '0.45rem',
-                        backgroundColor: 'rgba(140, 166, 248, 0.12)',
-                        border: '1px solid rgba(140, 166, 248, 0.3)',
-                        color: '#8CA6F8',
-                        borderRadius: '6px',
-                        fontSize: '0.76rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <FileText size={13} />
-                      <span>Ver Ficha Marcial WKF</span>
-                    </button>
-
                     {user.status === 'pending' && (
                       <div
                         style={{
-                          marginTop: '0.5rem',
-                          padding: '0.35rem 0.55rem',
-                          backgroundColor: 'rgba(234, 179, 8, 0.15)',
+                          marginTop: '0.6rem',
+                          padding: '0.45rem 0.65rem',
+                          backgroundColor: 'rgba(234, 179, 8, 0.12)',
                           border: '1px solid rgba(234, 179, 8, 0.3)',
-                          borderRadius: '4px',
+                          borderRadius: '6px',
                           fontSize: '0.72rem',
                           color: '#FACC15',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.35rem',
+                          gap: '0.4rem',
                         }}
                       >
-                        <Clock size={12} /> Cuenta en espera de aprobación
+                        <Clock size={13} /> Cuenta en espera de aprobación
                       </div>
                     )}
                   </div>
@@ -401,24 +332,79 @@ export default function Header() {
                     <Link
                       href="/admin"
                       onClick={() => setIsUserDropdownOpen(false)}
+                      className="admin-badge-btn"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.6rem',
-                        padding: '0.65rem 0.6rem',
-                        marginTop: '0.5rem',
-                        backgroundColor: 'rgba(35, 52, 107, 0.3)',
-                        border: '1px solid rgba(140, 166, 248, 0.3)',
-                        borderRadius: '6px',
-                        color: '#8CA6F8',
+                        justifyContent: 'space-between',
+                        padding: '0.75rem 0.85rem',
+                        marginTop: '0.65rem',
+                        background: 'linear-gradient(135deg, rgba(35, 52, 107, 0.55) 0%, rgba(16, 21, 38, 0.85) 100%)',
+                        border: '1px solid rgba(140, 166, 248, 0.35)',
+                        borderRadius: '8px',
                         textDecoration: 'none',
-                        fontSize: '0.82rem',
-                        fontWeight: 700,
-                        transition: 'background-color 0.2s ease',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
                       }}
                     >
-                      <Shield size={16} color="#8CA6F8" />
-                      <span>Panel de Administración (/admin)</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+                        <div
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            backgroundColor: 'rgba(140, 166, 248, 0.16)',
+                            border: '1px solid rgba(140, 166, 248, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <ShieldCheck size={18} color="#8CA6F8" />
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                            <span
+                              style={{
+                                fontSize: '0.82rem',
+                                fontWeight: 700,
+                                color: '#F7F8FA',
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              Panel de Administración
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '0.58rem',
+                                fontWeight: 800,
+                                letterSpacing: '0.06em',
+                                padding: '0.1rem 0.35rem',
+                                backgroundColor: 'rgba(192, 132, 252, 0.2)',
+                                border: '1px solid rgba(192, 132, 252, 0.4)',
+                                color: '#C084FC',
+                                borderRadius: '4px',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              ADMIN
+                            </span>
+                          </div>
+                          <span
+                            style={{
+                              display: 'block',
+                              fontSize: '0.68rem',
+                              color: '#9FA6B8',
+                              fontWeight: 500,
+                              marginTop: '0.15rem',
+                            }}
+                          >
+                            Gestión general del dojo
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight size={16} color="#8CA6F8" style={{ opacity: 0.85, flexShrink: 0 }} />
                     </Link>
                   )}
 
@@ -584,76 +570,8 @@ export default function Header() {
                   </div>
                 </div>
 
-                {(user.kataCategory || user.kumiteCategory) && (
-                  <div
-                    style={{
-                      marginTop: '0.65rem',
-                      padding: '0.55rem',
-                      backgroundColor: 'rgba(0, 0, 0, 0.35)',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                      borderRadius: '6px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                      <span style={{ fontSize: '0.66rem', fontWeight: 700, letterSpacing: '0.06em', color: '#9DA3B4', textTransform: 'uppercase' }}>
-                        Categorías WKF
-                      </span>
-                      {user.age && (
-                        <span style={{ fontSize: '0.68rem', color: '#CBD5E1', fontWeight: 600 }}>
-                          {user.age} años {user.weight ? `• ${user.weight}kg` : ''}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                      {user.kataCategory && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem' }}>
-                          <span style={{ color: '#93C5FD', fontWeight: 600 }}>🥋 Kata:</span>
-                          <span style={{ color: '#F7F8FA', fontWeight: 700, backgroundColor: 'rgba(59, 130, 246, 0.2)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
-                            {user.kataCategory}
-                          </span>
-                        </div>
-                      )}
-                      {user.kumiteCategory && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem' }}>
-                          <span style={{ color: '#FCA5A5', fontWeight: 600 }}>🥊 Kumite:</span>
-                          <span style={{ color: '#F7F8FA', fontWeight: 700, backgroundColor: 'rgba(239, 68, 68, 0.2)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
-                            {user.kumiteCategory}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsFichaModalOpen(true);
-                    closeMobile();
-                  }}
-                  style={{
-                    width: '100%',
-                    marginTop: '0.6rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.45rem',
-                    padding: '0.5rem',
-                    backgroundColor: 'rgba(140, 166, 248, 0.12)',
-                    border: '1px solid rgba(140, 166, 248, 0.3)',
-                    color: '#8CA6F8',
-                    borderRadius: '6px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <FileText size={14} />
-                  <span>Ver Ficha Marcial WKF</span>
-                </button>
-
                 {user.status === 'pending' && (
-                  <p style={{ fontSize: '0.72rem', color: '#FACC15', marginTop: '0.3rem' }}>
+                  <p style={{ fontSize: '0.72rem', color: '#FACC15', marginTop: '0.5rem' }}>
                     <Clock size={12} style={{ display: 'inline', marginRight: '4px' }} /> En espera de aprobación
                   </p>
                 )}
@@ -662,22 +580,78 @@ export default function Header() {
                   <Link
                     href="/admin"
                     onClick={closeMobile}
+                    className="admin-badge-btn"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.5rem 0.75rem',
-                      marginTop: '0.65rem',
-                      backgroundColor: 'rgba(35, 52, 107, 0.4)',
-                      border: '1px solid rgba(140, 166, 248, 0.4)',
-                      borderRadius: '4px',
-                      color: '#8CA6F8',
-                      fontWeight: 700,
-                      fontSize: '0.85rem',
+                      justifyContent: 'space-between',
+                      padding: '0.75rem 0.85rem',
+                      marginTop: '0.75rem',
+                      background: 'linear-gradient(135deg, rgba(35, 52, 107, 0.55) 0%, rgba(16, 21, 38, 0.85) 100%)',
+                      border: '1px solid rgba(140, 166, 248, 0.35)',
+                      borderRadius: '8px',
                       textDecoration: 'none',
+                      boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
                     }}
                   >
-                    <Shield size={14} /> Panel Administrativo (/admin)
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+                      <div
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          backgroundColor: 'rgba(140, 166, 248, 0.16)',
+                          border: '1px solid rgba(140, 166, 248, 0.3)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <ShieldCheck size={18} color="#8CA6F8" />
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <span
+                            style={{
+                              fontSize: '0.84rem',
+                              fontWeight: 700,
+                              color: '#F7F8FA',
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            Panel de Administración
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '0.58rem',
+                              fontWeight: 800,
+                              letterSpacing: '0.06em',
+                              padding: '0.1rem 0.35rem',
+                              backgroundColor: 'rgba(192, 132, 252, 0.2)',
+                              border: '1px solid rgba(192, 132, 252, 0.4)',
+                              color: '#C084FC',
+                              borderRadius: '4px',
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            ADMIN
+                          </span>
+                        </div>
+                        <span
+                          style={{
+                            display: 'block',
+                            fontSize: '0.68rem',
+                            color: '#9FA6B8',
+                            fontWeight: 500,
+                            marginTop: '0.15rem',
+                          }}
+                        >
+                          Gestión general del dojo
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} color="#8CA6F8" style={{ opacity: 0.85, flexShrink: 0 }} />
                   </Link>
                 )}
 
@@ -730,286 +704,14 @@ export default function Header() {
         </div>
       )}
 
-      {/* Modal Ficha Marcial & Pasaporte WKF */}
-      {isFichaModalOpen && user && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100,
-            backgroundColor: 'rgba(5, 7, 12, 0.85)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem',
-          }}
-          onClick={() => setIsFichaModalOpen(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '100%',
-              maxWidth: '520px',
-              backgroundColor: '#12151E',
-              border: '1px solid rgba(140, 166, 248, 0.3)',
-              borderRadius: '16px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 25px rgba(140, 166, 248, 0.15)',
-              overflow: 'hidden',
-              animation: 'fadeIn 0.2s ease',
-            }}
-          >
-            {/* Header del Modal */}
-            <div
-              style={{
-                padding: '1.25rem 1.5rem',
-                background: 'linear-gradient(135deg, rgba(35, 52, 107, 0.4) 0%, rgba(142, 35, 35, 0.25) 100%)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    backgroundColor: '#191D28',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Award size={20} color="#ECC94B" />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#F7F8FA', margin: 0, letterSpacing: '0.02em' }}>
-                    Ficha Marcial WKF
-                  </h3>
-                  <p style={{ fontSize: '0.75rem', color: '#9FA6B8', margin: 0 }}>
-                    Federación Mundial de Karate • {siteConfig.brand.name}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsFichaModalOpen(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#9FA6B8',
-                  cursor: 'pointer',
-                  padding: '0.25rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '6px',
-                }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Cuerpo de la Ficha */}
-            <div style={{ padding: '1.5rem', maxHeight: '80vh', overflowY: 'auto' }}>
-              {/* Perfil del Estudiante */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  padding: '1rem',
-                  backgroundColor: '#161922',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '10px',
-                  marginBottom: '1.25rem',
-                }}
-              >
-                <div
-                  style={{
-                    width: '56px',
-                    height: '56px',
-                    borderRadius: '50%',
-                    backgroundColor: '#23346B',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.4rem',
-                    fontWeight: 800,
-                    overflow: 'hidden',
-                    flexShrink: 0,
-                    border: '2px solid rgba(140, 166, 248, 0.4)',
-                  }}
-                >
-                  {user.avatar ? (
-                    <Image
-                      src={user.avatar}
-                      alt={user.name}
-                      width={56}
-                      height={56}
-                      unoptimized
-                      referrerPolicy="no-referrer"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    user.name.charAt(0).toUpperCase()
-                  )}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F7F8FA', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {user.name}
-                  </h4>
-                  <p style={{ fontSize: '0.78rem', color: '#9FA6B8', margin: '0.15rem 0' }}>
-                    {user.email}
-                  </p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.35rem' }}>
-                    <span
-                      style={{
-                        fontSize: '0.72rem',
-                        padding: '0.2rem 0.6rem',
-                        backgroundColor: 'rgba(140, 166, 248, 0.2)',
-                        border: '1px solid rgba(140, 166, 248, 0.4)',
-                        color: '#8CA6F8',
-                        borderRadius: '4px',
-                        fontWeight: 700,
-                      }}
-                    >
-                      {user.kyuDan || user.belt || 'Sin grado'}
-                    </span>
-                    <span style={{ fontSize: '0.72rem', color: '#A0AEC0' }}>
-                      • {user.classesAttended || 0} clases asistidas
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Ficha Física y Datos Biométricos */}
-              <div style={{ marginBottom: '1.25rem' }}>
-                <h5 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#A0AEC0', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>
-                  Datos Biométricos de Competición
-                </h5>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.65rem' }}>
-                  <div style={{ backgroundColor: '#191D28', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
-                    <span style={{ display: 'block', fontSize: '0.7rem', color: '#9FA6B8', marginBottom: '0.2rem' }}>Fecha Nac.</span>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#F7F8FA' }}>
-                      {user.birthDate || 'No reg.'}
-                    </span>
-                  </div>
-                  <div style={{ backgroundColor: '#191D28', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
-                    <span style={{ display: 'block', fontSize: '0.7rem', color: '#9FA6B8', marginBottom: '0.2rem' }}>Edad Oficial</span>
-                    <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#60A5FA' }}>
-                      {user.age !== undefined ? `${user.age} años` : 'N/A'}
-                    </span>
-                  </div>
-                  <div style={{ backgroundColor: '#191D28', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
-                    <span style={{ display: 'block', fontSize: '0.7rem', color: '#9FA6B8', marginBottom: '0.2rem' }}>Peso Báscula</span>
-                    <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#F87171' }}>
-                      {user.weight ? `${user.weight} kg` : 'N/A'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Categorías Oficiales WKF */}
-              <div>
-                <h5 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#A0AEC0', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>
-                  Categorías Oficiales WKF (Calculadas)
-                </h5>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {/* Kata */}
-                  <div
-                    style={{
-                      backgroundColor: 'rgba(59, 130, 246, 0.08)',
-                      border: '1px solid rgba(96, 165, 250, 0.25)',
-                      borderRadius: '10px',
-                      padding: '0.85rem 1rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                      <span style={{ fontSize: '1.3rem' }}>🥋</span>
-                      <div>
-                        <span style={{ display: 'block', fontSize: '0.72rem', color: '#93C5FD', fontWeight: 700, textTransform: 'uppercase' }}>
-                          División Kata (Formas)
-                        </span>
-                        <span style={{ fontSize: '0.92rem', fontWeight: 800, color: '#F7F8FA' }}>
-                          {user.kataCategory || 'Pendiente de cálculo (registra fecha de nacimiento)'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Kumite */}
-                  <div
-                    style={{
-                      backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                      border: '1px solid rgba(248, 113, 113, 0.25)',
-                      borderRadius: '10px',
-                      padding: '0.85rem 1rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                      <span style={{ fontSize: '1.3rem' }}>🥊</span>
-                      <div>
-                        <span style={{ display: 'block', fontSize: '0.72rem', color: '#FCA5A5', fontWeight: 700, textTransform: 'uppercase' }}>
-                          División Kumite (Combate)
-                        </span>
-                        <span style={{ fontSize: '0.92rem', fontWeight: 800, color: '#F7F8FA' }}>
-                          {user.kumiteCategory || 'Pendiente de cálculo (registra peso y fecha de nacimiento)'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <p style={{ fontSize: '0.72rem', color: '#9FA6B8', marginTop: '0.85rem', lineHeight: 1.4 }}>
-                  ℹ️ Las categorías WKF son calculadas de acuerdo a la normativa oficial de la World Karate Federation (WKF) basada en edad cumplida, rama y división de peso corporal.
-                </p>
-              </div>
-            </div>
-
-            {/* Footer del Modal */}
-            <div
-              style={{
-                padding: '0.85rem 1.5rem',
-                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                backgroundColor: '#0F1118',
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setIsFichaModalOpen(false)}
-                style={{
-                  padding: '0.55rem 1.25rem',
-                  backgroundColor: '#1E2333',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  borderRadius: '6px',
-                  color: '#F7F8FA',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Media Queries de soporte */}
+      {/* Media Queries y Efectos */}
       <style jsx global>{`
+        .admin-badge-btn:hover {
+          background: linear-gradient(135deg, rgba(48, 71, 146, 0.75) 0%, rgba(22, 30, 56, 0.95) 100%) !important;
+          border-color: rgba(140, 166, 248, 0.6) !important;
+          box-shadow: 0 6px 20px rgba(35, 52, 107, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+          transform: translateY(-1px);
+        }
         @media (min-width: 768px) {
           .md-flex {
             display: flex !important;
