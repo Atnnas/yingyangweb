@@ -34,20 +34,31 @@ export const siteConfig = {
     color: '/images/logos/Logo_Color_Transparente.png',
   },
 
-  // Información de Contacto y Ubicación
+  // Sensei & Dirección Técnica
+  founder: {
+    name: 'Sensei Keylor Alfaro Fonseca',
+    title: 'Instructor & Founder Dojo Ying Yang',
+    rank: 'Cinto Negro 1º Dan',
+    affiliation: 'Seleccionado Nacional de Costa Rica (FECOKA / WKF)',
+    modality: 'Karate Do (Kumite)',
+    school: 'Escuela YI SIN MUN / Dojo Ying Yang',
+  },
+
+  // Información de Contacto y Ubicación Oficial
   contact: {
-    phone: '+52 (55) 1234-5678',
-    whatsappNumber: '525512345678',
+    phone: '+506 8344-8684 / +506 8748-1179',
+    phones: ['+506 8344-8684', '+506 8748-1179'],
+    whatsappNumber: '50683448684',
     whatsappDefaultMessage:
-      'Hola Sensei! Me gustaría solicitar información sobre las clases y horarios en el Dojo Ying Yang.',
-    email: 'contacto@dojoyingyang.com',
-    address: 'Av. de las Artes Marciales #108, Col. Tradición, Zona Centro',
-    addressNote: 'Estacionamiento privado para alumnos y familiares.',
+      'Hola Sensei Keylor! Me gustaría solicitar información sobre las clases y entrenamientos en el Dojo Ying Yang.',
+    email: 'alfarokeylor44@gmail.com',
+    address: 'Alajuela, Costa Rica',
+    addressNote: 'Dojo oficial de Karate Do tradicional y alta competencia Kumite.',
     schedule: {
       weekdays: 'Lunes a Viernes: 15:30 - 21:30 hrs',
       saturdays: 'Sábados: 08:00 - 13:30 hrs',
     },
-    facilityArea: '180 m² de tatami reglamentario y zona de preparación física',
+    facilityArea: 'Tatami reglamentario y zona de preparación física de alto rendimiento',
     mapsUrl: 'https://maps.google.com',
   },
 
