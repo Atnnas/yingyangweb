@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -21,6 +21,9 @@ import {
   GraduationCap,
   Users,
   Compass,
+  Camera,
+  Maximize2,
+  X,
 } from 'lucide-react';
 import { siteConfig } from '@/config/site';
 
@@ -35,10 +38,43 @@ interface PalmaresItem {
   subtitle: string;
   description: string;
   highlight?: string;
+  image?: {
+    src: string;
+    alt: string;
+    caption?: string;
+    tag?: string;
+    objectPosition?: string;
+  };
 }
 
 export default function NosotrosPage() {
   const [activeTab, setActiveTab] = useState<PalmaresCategory>('all');
+  const [selectedPhoto, setSelectedPhoto] = useState<{
+    src: string;
+    alt: string;
+    title: string;
+    subtitle?: string;
+    location?: string;
+    caption?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedPhoto(null);
+      }
+    };
+    if (selectedPhoto) {
+      window.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [selectedPhoto]);
 
   const palmaresItems: PalmaresItem[] = [
     // Circuito Mundial & Oficial WKF
@@ -61,19 +97,35 @@ export default function NosotrosPage() {
       badgeColor: 'gold',
       subtitle: 'Circuito Mundial de Alta Competencia WKF',
       description:
-        'Ubicación destacada entre los mejores 30 competidores del planeta en la parada de la prestigiosa Karate 1 Series A.',
+        'Ubicación destacada entre los mejores 30 competidores del planeta en la parada de la prestigiosa Karate 1 Series A de la WKF.',
       highlight: 'Salzburgo, Austria',
+      image: {
+        src: '/images/palmares/salzburgo-karate-1.jpg',
+        alt: 'Sensei Keylor Alfaro en la Karate 1 - Series A en Salzburgo, Austria con acreditación oficial WKF',
+        caption:
+          'Sensei Keylor Alfaro con acreditación oficial en la Karate 1 - Series A en Salzburgo, Austria, ubicándose en el Top 30 mundial.',
+        tag: 'Salzburgo, Austria',
+        objectPosition: 'center 18%',
+      },
     },
     {
       title: 'Campeonato Mundial Senior WKF',
       category: 'world',
-      location: 'Circuito WKF',
-      badge: 'Top 40 Mundial',
+      location: 'Budapest, Hungría (2023)',
+      badge: 'Top 40 del Certamen',
       badgeColor: 'gold',
-      subtitle: 'Campeonato Mundial Absoluto WKF',
+      subtitle: '26º Campeonato Mundial Absoluto WKF',
       description:
-        'Ubicación entre los mejores 40 competidores del mundo en la máxima categoría senior de Kumite internacional.',
-      highlight: 'Top 40 Global',
+        'Ubicación destacada entre los mejores 40 competidores del mundo en la máxima categoría senior de Kumite internacional en el 26º Campeonato Mundial WKF celebrado en Budapest, Hungría.',
+      highlight: 'Top 40 del Mundo (Budapest 2023)',
+      image: {
+        src: '/images/palmares/mundial-budapest-2023.jpg',
+        alt: 'Sensei Keylor Alfaro en el World Karate Championships Budapest 2023',
+        caption:
+          'Sensei Keylor Alfaro en el photocall oficial del 26º Campeonato Mundial Senior WKF en Budapest 2023, logrando ubicarse en el Top 40 mundial.',
+        tag: 'Budapest 2023',
+        objectPosition: 'center 22%',
+      },
     },
     {
       title: 'Campeonato Panamericano WKF',
@@ -127,6 +179,14 @@ export default function NosotrosPage() {
       description:
         'Medalla de plata y subcampeonato en la máxima cita deportiva estudiantil de la región centroamericana.',
       highlight: 'Subcampeón Regional',
+      image: {
+        src: '/images/palmares/centroamericano-estudiantil.jpg',
+        alt: 'Sensei Keylor Alfaro en combate Kumite durante los Juegos Centroamericanos Estudiantiles',
+        caption:
+          'Sensei Keylor Alfaro en plena acción sobre el tatami durante el combate en los Juegos Centroamericanos Estudiantiles, conquistando la medalla de plata regional.',
+        tag: 'Acción Kumite • Plata',
+        objectPosition: 'center 32%',
+      },
     },
     {
       title: 'Campeonato Centroamericano CONDEKA',
@@ -135,8 +195,16 @@ export default function NosotrosPage() {
       badgeColor: 'bronze',
       subtitle: 'Podio Regional Centroamericano',
       description:
-        'Tercer lugar y medalla de bronce frente a las delegaciones nacionales de la región Centroamericana.',
+        'Tercer lugar y medalla de bronce frente a las delegaciones nacionales de la Confederación Centroamericana de Karate (CONDEKA).',
       highlight: 'Podio CONDEKA',
+      image: {
+        src: '/images/palmares/centroamericano-condeka.jpg',
+        alt: 'Sensei Keylor Alfaro con la Selección Nacional de Costa Rica (FECOKA) en concentración deportiva regional',
+        caption:
+          'Sensei Keylor Alfaro junto a la delegación de la Selección Nacional de Karate de Costa Rica (FECOKA) en el marco de la competencia regional CONDEKA, logrando la medalla de bronce.',
+        tag: 'Selección FECOKA • Bronce',
+        objectPosition: 'center 45%',
+      },
     },
 
     // Dominio Regional & Nacional
@@ -726,7 +794,7 @@ export default function NosotrosPage() {
                   borderRadius: '6px',
                 }}
               >
-                Top 40 en Campeonato Mundial Senior WKF
+                Top 40 obtenido en el Campeonato Mundial Senior WKF (Budapest 2023)
               </div>
             </div>
 
@@ -1029,107 +1097,330 @@ export default function NosotrosPage() {
           >
             {filteredPalmares.map((item, index) => {
               const badgeStyle = getBadgeStyles(item.badgeColor);
+              const hasImage = Boolean(item.image);
+
               return (
                 <div
                   key={index}
+                  className={hasImage ? 'palmares-card-featured' : undefined}
                   style={{
                     backgroundColor: 'rgba(18, 21, 29, 0.75)',
-                    border: '1px solid rgba(255, 255, 255, 0.09)',
-                    borderRadius: '12px',
-                    padding: '1.75rem',
+                    border: hasImage
+                      ? '1px solid rgba(140, 166, 248, 0.35)'
+                      : '1px solid rgba(255, 255, 255, 0.09)',
+                    borderRadius: '14px',
+                    padding: hasImage ? 0 : '1.75rem',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
                     position: 'relative',
                     overflow: 'hidden',
+                    boxShadow: hasImage
+                      ? '0 12px 30px -10px rgba(0, 0, 0, 0.7), 0 0 25px rgba(57, 79, 154, 0.18)'
+                      : 'none',
+                    transition: 'all 0.3s ease',
                   }}
                 >
-                  <div>
-                    {/* Header de la Tarjeta con Badges */}
+                  {/* Encabezado visual si la tarjeta tiene fotografía */}
+                  {item.image && (
                     <div
+                      onClick={() =>
+                        setSelectedPhoto({
+                          src: item.image!.src,
+                          alt: item.image!.alt,
+                          title: item.title,
+                          subtitle: item.subtitle,
+                          location: item.location,
+                          caption: item.image!.caption,
+                        })
+                      }
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '0.5rem',
-                        marginBottom: '1rem',
+                        position: 'relative',
+                        width: '100%',
+                        height: '240px',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        backgroundColor: '#090B10',
                       }}
                     >
-                      <span
+                      <Image
+                        src={item.image.src}
+                        alt={item.image.alt}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 420px"
                         style={{
-                          fontSize: '0.72rem',
-                          fontWeight: 800,
-                          letterSpacing: '0.06em',
-                          textTransform: 'uppercase',
-                          padding: '0.3rem 0.65rem',
-                          borderRadius: '4px',
-                          backgroundColor: badgeStyle.bg,
-                          border: `1px solid ${badgeStyle.border}`,
-                          color: badgeStyle.text,
+                          objectFit: 'cover',
+                          objectPosition: item.image.objectPosition || 'center 18%',
+                          transition: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+                        }}
+                        className="palmares-card-img"
+                      />
+
+                      {/* Degradado inferior para fundir con el cuerpo oscuro de la tarjeta */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background:
+                            'linear-gradient(180deg, rgba(9, 11, 16, 0.15) 0%, rgba(18, 21, 29, 0.45) 60%, rgba(18, 21, 29, 1) 100%)',
+                          pointerEvents: 'none',
+                        }}
+                      />
+
+                      {/* Badges superiores flotantes */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '1rem',
+                          left: '1rem',
+                          right: '1rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '0.5rem',
+                          zIndex: 2,
                         }}
                       >
-                        {item.badge}
-                      </span>
-                      {item.location && (
                         <span
                           style={{
-                            fontSize: '0.75rem',
-                            color: '#94A3B8',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            letterSpacing: '0.06em',
+                            textTransform: 'uppercase',
+                            padding: '0.35rem 0.7rem',
+                            borderRadius: '6px',
+                            backgroundColor: badgeStyle.bg,
+                            border: `1px solid ${badgeStyle.border}`,
+                            color: badgeStyle.text,
+                            backdropFilter: 'blur(8px)',
+                            WebkitBackdropFilter: 'blur(8px)',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
                           }}
                         >
-                          <MapPin size={13} color="#8CA6F8" />
-                          {item.location}
+                          {item.badge}
                         </span>
-                      )}
-                    </div>
 
-                    <h3
-                      style={{
-                        fontSize: '1.25rem',
-                        fontWeight: 800,
-                        color: '#FFFFFF',
-                        marginBottom: '0.35rem',
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      {item.title}
-                    </h3>
-                    <p
-                      style={{
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        color: '#8CA6F8',
-                        marginBottom: '0.85rem',
-                      }}
-                    >
-                      {item.subtitle}
-                    </p>
-                    <p style={{ fontSize: '0.88rem', color: '#9FA6B8', lineHeight: 1.65, margin: 0 }}>
-                      {item.description}
-                    </p>
-                  </div>
+                        {item.location && (
+                          <span
+                            style={{
+                              fontSize: '0.74rem',
+                              fontWeight: 700,
+                              color: '#F1F5F9',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.3rem',
+                              backgroundColor: 'rgba(9, 11, 16, 0.75)',
+                              backdropFilter: 'blur(8px)',
+                              WebkitBackdropFilter: 'blur(8px)',
+                              padding: '0.3rem 0.65rem',
+                              borderRadius: '20px',
+                              border: '1px solid rgba(255, 255, 255, 0.15)',
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
+                            }}
+                          >
+                            <MapPin size={12} color="#8CA6F8" />
+                            {item.location}
+                          </span>
+                        )}
+                      </div>
 
-                  {item.highlight && (
-                    <div
-                      style={{
-                        marginTop: '1.25rem',
-                        paddingTop: '0.85rem',
-                        borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontSize: '0.78rem',
-                      }}
-                    >
-                      <span style={{ color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Hito Competitivo
-                      </span>
-                      <span style={{ fontWeight: 800, color: '#F7F8FA' }}>{item.highlight}</span>
+                      {/* Chips inferiores flotantes */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: '0.85rem',
+                          left: '1rem',
+                          right: '1rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          zIndex: 2,
+                        }}
+                      >
+                        {item.image.tag ? (
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              backgroundColor: 'rgba(0, 40, 100, 0.5)',
+                              backdropFilter: 'blur(8px)',
+                              WebkitBackdropFilter: 'blur(8px)',
+                              border: '1px solid rgba(140, 166, 248, 0.35)',
+                              color: '#BFDBFE',
+                              padding: '0.25rem 0.6rem',
+                              borderRadius: '20px',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                            }}
+                          >
+                            <Camera size={11} color="#93C5FD" />
+                            <span>{item.image.tag}</span>
+                          </div>
+                        ) : <div />}
+
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            backgroundColor: 'rgba(9, 11, 16, 0.8)',
+                            backdropFilter: 'blur(8px)',
+                            WebkitBackdropFilter: 'blur(8px)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            color: '#F1F5F9',
+                            padding: '0.25rem 0.65rem',
+                            borderRadius: '20px',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                          }}
+                        >
+                          <Maximize2 size={11} color="#8CA6F8" />
+                          <span>Ampliar</span>
+                        </div>
+                      </div>
                     </div>
                   )}
+
+                  {/* Contenido de la Tarjeta */}
+                  <div
+                    style={{
+                      padding: hasImage ? '1.25rem 1.75rem 1.75rem' : 0,
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div>
+                      {/* Si la tarjeta NO tiene imagen, mostrar el header tradicional */}
+                      {!hasImage && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '0.5rem',
+                            marginBottom: '1rem',
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 800,
+                              letterSpacing: '0.06em',
+                              textTransform: 'uppercase',
+                              padding: '0.3rem 0.65rem',
+                              borderRadius: '4px',
+                              backgroundColor: badgeStyle.bg,
+                              border: `1px solid ${badgeStyle.border}`,
+                              color: badgeStyle.text,
+                            }}
+                          >
+                            {item.badge}
+                          </span>
+                          {item.location && (
+                            <span
+                              style={{
+                                fontSize: '0.75rem',
+                                color: '#94A3B8',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                              }}
+                            >
+                              <MapPin size={13} color="#8CA6F8" />
+                              {item.location}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      <h3
+                        style={{
+                          fontSize: '1.25rem',
+                          fontWeight: 800,
+                          color: '#FFFFFF',
+                          marginBottom: '0.35rem',
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {item.title}
+                      </h3>
+                      <p
+                        style={{
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          color: '#8CA6F8',
+                          marginBottom: '0.85rem',
+                        }}
+                      >
+                        {item.subtitle}
+                      </p>
+                      <p style={{ fontSize: '0.88rem', color: '#9FA6B8', lineHeight: 1.65, margin: 0 }}>
+                        {item.description}
+                      </p>
+                    </div>
+
+                    <div>
+                      {item.highlight && (
+                        <div
+                          style={{
+                            marginTop: '1.25rem',
+                            paddingTop: '0.85rem',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            fontSize: '0.78rem',
+                          }}
+                        >
+                          <span style={{ color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Hito Competitivo
+                          </span>
+                          <span style={{ fontWeight: 800, color: '#F7F8FA' }}>{item.highlight}</span>
+                        </div>
+                      )}
+
+                      {/* Botón interactivo para ver foto en alta resolución si existe imagen */}
+                      {item.image && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedPhoto({
+                              src: item.image!.src,
+                              alt: item.image!.alt,
+                              title: item.title,
+                              subtitle: item.subtitle,
+                              location: item.location,
+                              caption: item.image!.caption,
+                            })
+                          }
+                          className="btn-ver-foto"
+                          style={{
+                            width: '100%',
+                            marginTop: '1.25rem',
+                            padding: '0.65rem 0.95rem',
+                            backgroundColor: 'rgba(57, 79, 154, 0.16)',
+                            border: '1px solid rgba(140, 166, 248, 0.3)',
+                            borderRadius: '8px',
+                            color: '#E2E8F0',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.25s ease',
+                          }}
+                        >
+                          <Maximize2 size={13} color="#8CA6F8" />
+                          <span>Ver Foto Oficial en Alta Resolución</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -1331,8 +1622,168 @@ export default function NosotrosPage() {
         </div>
       </section>
 
-      {/* Responsive Styles */}
+      {/* Modal Lightbox de Fotografía Oficial */}
+      {selectedPhoto && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setSelectedPhoto(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            backgroundColor: 'rgba(4, 6, 10, 0.92)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.25rem',
+            animation: 'fadeInLightbox 0.25s ease-out',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: 'min(94vw, 620px)',
+              width: '100%',
+              backgroundColor: '#0E1118',
+              border: '1px solid rgba(140, 166, 248, 0.3)',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: '0 30px 60px -15px rgba(0, 0, 0, 0.95), 0 0 50px rgba(57, 79, 154, 0.3)',
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '92vh',
+            }}
+          >
+            {/* Botón de cerrar modal */}
+            <button
+              type="button"
+              onClick={() => setSelectedPhoto(null)}
+              aria-label="Cerrar vista previa"
+              style={{
+                position: 'absolute',
+                top: '0.85rem',
+                right: '0.85rem',
+                zIndex: 30,
+                backgroundColor: 'rgba(9, 11, 16, 0.85)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                color: '#FFFFFF',
+                borderRadius: '50%',
+                width: '38px',
+                height: '38px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <X size={18} />
+            </button>
+
+            {/* Contenedor de Fotografía Vertical sin recortes forzados */}
+            <div
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: 'min(58vh, 520px)',
+                backgroundColor: '#07080B',
+                overflow: 'hidden',
+              }}
+            >
+              <Image
+                src={selectedPhoto.src}
+                alt={selectedPhoto.alt}
+                fill
+                sizes="(max-width: 768px) 100vw, 520px"
+                style={{ objectFit: 'contain' }}
+                priority
+              />
+            </div>
+
+            {/* Panel Informativo del Hito Marcial */}
+            <div
+              style={{
+                padding: '1.25rem 1.5rem',
+                backgroundColor: '#0E1118',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                overflowY: 'auto',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.75rem',
+                  marginBottom: '0.35rem',
+                }}
+              >
+                <h4 style={{ margin: 0, fontSize: '1.15rem', color: '#FFFFFF', fontWeight: 800 }}>
+                  {selectedPhoto.title}
+                </h4>
+                {selectedPhoto.location && (
+                  <span
+                    style={{
+                      fontSize: '0.76rem',
+                      fontWeight: 700,
+                      color: '#8CA6F8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                  >
+                    <MapPin size={13} color="#8CA6F8" />
+                    {selectedPhoto.location}
+                  </span>
+                )}
+              </div>
+
+              {selectedPhoto.subtitle && (
+                <p style={{ margin: '0 0 0.5rem', fontSize: '0.84rem', color: '#8CA6F8', fontWeight: 600 }}>
+                  {selectedPhoto.subtitle}
+                </p>
+              )}
+
+              {selectedPhoto.caption && (
+                <p style={{ margin: 0, fontSize: '0.84rem', color: '#9FA6B8', lineHeight: 1.55 }}>
+                  {selectedPhoto.caption}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Responsive Styles & Animaciones */}
       <style jsx>{`
+        @keyframes fadeInLightbox {
+          from {
+            opacity: 0;
+            transform: scale(0.97);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        .palmares-card-featured:hover {
+          border-color: rgba(140, 166, 248, 0.6) !important;
+          box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.85), 0 0 35px rgba(57, 79, 154, 0.28) !important;
+        }
+        .palmares-card-featured:hover .palmares-card-img {
+          transform: scale(1.05);
+        }
+        .btn-ver-foto:hover {
+          background-color: rgba(57, 79, 154, 0.32) !important;
+          border-color: rgba(140, 166, 248, 0.55) !important;
+          color: #FFFFFF !important;
+        }
         @media (max-width: 960px) {
           .hero-sensei-grid,
           .seminar-grid {
